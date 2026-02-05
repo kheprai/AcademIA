@@ -4,10 +4,8 @@ export const routes: (
   defineRoutes: (callback: (defineRoute: DefineRouteFunction) => void) => RouteManifest,
 ) => RouteManifest | Promise<RouteManifest> = (defineRoutes) => {
   return defineRoutes((route) => {
-    // Resource routes (robots.txt, sitemap, llms.txt) — no layout, return raw text/XML
-    route("robots.txt", "routes/robots-txt.ts", { id: "robots-txt" });
-    route("sitemap.xml", "routes/sitemap-xml.ts", { id: "sitemap-xml" });
-    route("llms.txt", "routes/llms-txt.ts", { id: "llms-txt" });
+    // SEO routes (robots.txt, sitemap.xml, llms.txt) are served by Express in server.js
+    // because SPA mode doesn't support Remix loaders.
 
     route("", "modules/layout.tsx", () => {
       // Landing pages (public) - with explicit paths

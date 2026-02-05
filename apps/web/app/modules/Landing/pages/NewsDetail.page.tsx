@@ -16,34 +16,12 @@ import {
   truncateForMeta,
   ogImageUrl,
 } from "~/utils/meta-helpers";
-import { serverFetchSafe, resolveLanguage } from "~/utils/server-fetch.server";
 
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import type { MetaFunction } from "@remix-run/node";
 
-export const loader = async ({ params, request }: LoaderFunctionArgs) => {
-  const newsId = params.newsId || "";
-  if (!newsId) return { news: null };
-
-  const language = resolveLanguage(request);
-
-  const newsRes = await serverFetchSafe<{
-    data: {
-      title: string;
-      summary: string;
-      content: string;
-      resources?: {
-        coverImage?: { fileUrl: string };
-      };
-    };
-  }>(`/api/news/${encodeURIComponent(newsId)}?language=${language}`, request);
-
-  return { news: newsRes?.data ?? null };
-};
-
-// Skip server round-trip on client navigation; React Query handles data on the client
 export const clientLoader = () => ({ news: null });
 
-export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
+export const meta: MetaFunction<typeof clientLoader> = ({ data, matches }) => {
   const company = getCompanyFromMatches(matches);
   const news = data?.news;
 

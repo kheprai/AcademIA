@@ -39,9 +39,8 @@ import {
   truncateForMeta,
   ogImageUrl,
 } from "~/utils/meta-helpers";
-import { serverFetchSafe, resolveLanguage } from "~/utils/server-fetch.server";
 
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import type { MetaFunction } from "@remix-run/node";
 import type { SupportedLanguages } from "@repo/shared";
 
 const languageFlags: Record<Language, { flag: string; label: string; bgColor: string }> = {
@@ -63,37 +62,6 @@ const resolvePreferredLanguage = (url: URL): SupportedLanguages => {
   }
 
   return SUPPORTED_LANGUAGES.EN;
-};
-
-export const loader = async ({ params, request }: LoaderFunctionArgs) => {
-  const slug = params.slug || "";
-  if (!slug) return { course: null };
-
-  const language = resolveLanguage(request);
-
-  const lookup = await serverFetchSafe<{ data: { status: string; slug?: string } }>(
-    `/api/course/lookup?id=${encodeURIComponent(slug)}&language=${language}`,
-    request,
-  );
-
-  if (lookup?.data?.status === "redirect" && lookup.data.slug) {
-    const url = new URL(request.url);
-    throw new Response(null, {
-      status: 302,
-      headers: { Location: `/courses/${lookup.data.slug}${url.search}` },
-    });
-  }
-
-  const courseRes = await serverFetchSafe<{
-    data: {
-      title: string;
-      description: string;
-      category: string | null;
-      thumbnailUrl?: string;
-    };
-  }>(`/api/course?id=${encodeURIComponent(slug)}&language=${language}`, request);
-
-  return { course: courseRes?.data ?? null };
 };
 
 export const clientLoader = async ({
@@ -124,7 +92,7 @@ export const clientLoader = async ({
   return { course: null };
 };
 
-export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
+export const meta: MetaFunction<typeof clientLoader> = ({ data, matches }) => {
   const company = getCompanyFromMatches(matches);
   const course = data?.course;
 

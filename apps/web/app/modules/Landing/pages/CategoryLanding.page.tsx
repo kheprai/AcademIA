@@ -5,34 +5,17 @@ import { useAvailableCourses } from "~/api/queries/useAvailableCourses";
 import { useCategoryPage } from "~/api/queries/useCategoryPage";
 import { useLanguageStore } from "~/modules/Dashboard/Settings/Language/LanguageStore";
 import { buildMeta, getCompanyFromMatches, ogImageUrl } from "~/utils/meta-helpers";
-import { serverFetchSafe } from "~/utils/server-fetch.server";
 
 import { CategoryHero } from "../components/CategoryHero";
 import { CategoryNavigationButtons } from "../components/CategoryNavigationButtons";
 import { FeaturedCourseShowcase } from "../components/FeaturedCourseShowcase";
 import { MockupSection } from "../components/MockupSection";
 
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import type { MetaFunction } from "@remix-run/node";
 
-export const loader = async ({ params, request }: LoaderFunctionArgs) => {
-  const slug = params.slug || "";
-  if (!slug) return { category: null };
-
-  const categoryRes = await serverFetchSafe<{
-    data: {
-      heroTitle: Record<string, string> | null;
-      heroSubtitle: Record<string, string> | null;
-      heroImageUrl: string | null;
-    };
-  }>(`/api/category/page/${encodeURIComponent(slug)}`, request);
-
-  return { category: categoryRes?.data ?? null };
-};
-
-// Skip server round-trip on client navigation; React Query handles data on the client
 export const clientLoader = () => ({ category: null });
 
-export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
+export const meta: MetaFunction<typeof clientLoader> = ({ data, matches }) => {
   const company = getCompanyFromMatches(matches);
   const category = data?.category;
 

@@ -16,23 +16,12 @@ import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useLanguageStore } from "~/modules/Dashboard/Settings/Language/LanguageStore";
 import { buildMeta, getCompanyFromMatches, truncateForMeta } from "~/utils/meta-helpers";
-import { serverFetchSafe, resolveLanguage } from "~/utils/server-fetch.server";
 
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import type { MetaFunction } from "@remix-run/node";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const language = resolveLanguage(request);
-  const qaRes = await serverFetchSafe<{
-    data: { id: string; question: string; answer: string }[];
-  }>(`/api/qa?language=${language}`, request);
-
-  return { qaItems: qaRes?.data ?? [] };
-};
-
-// Skip server round-trip on client navigation; React Query handles data on the client
 export const clientLoader = () => ({ qaItems: [] });
 
-export const meta: MetaFunction<typeof loader> = ({ matches }) => {
+export const meta: MetaFunction<typeof clientLoader> = ({ matches }) => {
   const company = getCompanyFromMatches(matches);
   return buildMeta({ title: `Preguntas Frecuentes | ${company}` });
 };
