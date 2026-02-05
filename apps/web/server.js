@@ -1,6 +1,3 @@
-// INFO: This file is not used, but It's already preconfigured if you want to switch into fullstack/bff apporach
-// Currently it is using express but for production probably we will use HONO
-
 import { createRequestHandler } from "@remix-run/express";
 import compression from "compression";
 import express from "express";
@@ -42,8 +39,57 @@ app.use(express.static("build/client", { maxAge: "1h" }));
 
 app.use(morgan("tiny"));
 
+// OG image proxy — proxies internal S3/MinIO images for social media crawlers
+const ALLOWED_IMAGE_HOSTS = new Set(["localhost", "127.0.0.1", "minio", "s3.amazonaws.com"]);
+
+app.get("/og-proxy", async (req, res) => {
+  const imageUrl = req.query.url;
+  if (!imageUrl || typeof imageUrl !== "string") {
+    return res.status(400).send("Missing url parameter");
+  }
+
+  let parsed;
+  try {
+    parsed = new URL(imageUrl);
+  } catch {
+    return res.status(400).send("Invalid url");
+  }
+
+  const hostname = parsed.hostname;
+  const isAllowed =
+    ALLOWED_IMAGE_HOSTS.has(hostname) ||
+    hostname.endsWith(".amazonaws.com") ||
+    hostname.endsWith(".digitaloceanspaces.com") ||
+    hostname.endsWith(".r2.cloudflarestorage.com");
+
+  if (!isAllowed) {
+    return res.status(403).send("Host not allowed");
+  }
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const upstream = await fetch(imageUrl, { signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!upstream.ok) {
+      return res.status(upstream.status).send("Upstream error");
+    }
+
+    const contentType = upstream.headers.get("content-type") || "image/jpeg";
+    res.set("Content-Type", contentType);
+    res.set("Cache-Control", "public, max-age=86400");
+
+    const buffer = Buffer.from(await upstream.arrayBuffer());
+    res.send(buffer);
+  } catch {
+    res.status(502).send("Failed to fetch image");
+  }
+});
+
 // handle SSR requests
 app.all("*", remixHandler);
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3001;
 app.listen(port, () => console.log(`Express server listening at http://localhost:${port}`));

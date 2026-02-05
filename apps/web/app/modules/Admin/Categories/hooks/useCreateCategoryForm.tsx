@@ -27,7 +27,7 @@ export const useCreateCategoryForm = (onSuccess: (response: CreateCategoryRespon
         title: {
           en: values.title_en,
           es: values.title_es,
-        } as unknown as string, // Type will be correct after swagger regeneration
+        },
       },
     }).then((response) => {
       queryClient.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });

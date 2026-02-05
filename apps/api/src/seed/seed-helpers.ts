@@ -36,6 +36,10 @@ export async function createNiceCourses(
       .values({
         id: crypto.randomUUID(),
         title: { en: courseData.category },
+        slug: courseData.category
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, ""),
         archived: false,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),

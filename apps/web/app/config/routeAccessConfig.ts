@@ -132,4 +132,5 @@ export const routeAccessConfig = createRouteConfig({
   "admin/news/add": ADMIN_AND_CONTENT_CREATOR,
   "admin/news/:newsId": ADMIN_AND_CONTENT_CREATOR,
   "admin/news/:newsId/edit": ADMIN_AND_CONTENT_CREATOR,
+  "admin/registration-attempts": ADMIN_ONLY,
 });

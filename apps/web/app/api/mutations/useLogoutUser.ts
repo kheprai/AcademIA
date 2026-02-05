@@ -12,6 +12,19 @@ import { useAnnouncementsPopupStore } from "~/modules/Dashboard/store/useAnnounc
 import { ApiClient } from "../api-client";
 import { queryClient } from "../queryClient";
 
+const PROTECTED_PREFIXES = [
+  "/library",
+  "/course/",
+  "/admin",
+  "/progress",
+  "/settings",
+  "/provider-information",
+  "/announcements",
+  "/profile/",
+  "/qa/",
+  "/articles/",
+];
+
 export function useLogoutUser() {
   const { toast } = useToast();
   const { setLoggedIn } = useAuthStore();
@@ -29,6 +42,7 @@ export function useLogoutUser() {
       setLoggedIn(false);
       setIsVisible(true);
       useCartStore.getState().clearCart();
+      queryClient.setQueryData(["currentUser"], null);
 
       return response.data;
     },
@@ -38,7 +52,12 @@ export function useLogoutUser() {
 
       clearHistory();
 
-      navigate("/auth/login");
+      const pathname = window.location.pathname;
+      const isProtectedRoute = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+
+      if (isProtectedRoute) {
+        navigate("/");
+      }
     },
     onError: (error) => {
       if (error instanceof AxiosError) {

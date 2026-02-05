@@ -15,12 +15,15 @@ export const ThemeContext = createContext<ThemeContextType | undefined>(undefine
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const theme = useThemeStore((state) => state.theme);
 
-  const [primaryColor, setPrimaryColor] = useState(
-    getComputedStyle(document.documentElement).getPropertyValue("--primary-700").trim(),
-  );
-  const [contrastColor, setContrastColor] = useState(
-    getComputedStyle(document.documentElement).getPropertyValue("--color-white").trim(),
-  );
+  const [primaryColor, setPrimaryColor] = useState("");
+  const [contrastColor, setContrastColor] = useState("");
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    setPrimaryColor(getComputedStyle(root).getPropertyValue("--primary-700").trim());
+    setContrastColor(getComputedStyle(root).getPropertyValue("--color-white").trim());
+  }, []);
 
   const handleSetColorSchema = useCallback((primaryColor: string, contrastColor: string) => {
     setPrimaryColor(primaryColor);

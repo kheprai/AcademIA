@@ -29,6 +29,7 @@ export class ChapterRepository {
         id: chapters.id,
         isFreemium: chapters.isFreemium,
         isAssigned: sql<boolean>`CASE WHEN ${studentCourses.status} = ${COURSE_ENROLLMENT.ENROLLED} THEN TRUE ELSE FALSE END`,
+        isPurchased: sql<boolean>`CASE WHEN ${studentCourses.purchasedAt} IS NOT NULL THEN TRUE ELSE FALSE END`,
       })
       .from(chapters)
       .leftJoin(

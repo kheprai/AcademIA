@@ -13,21 +13,28 @@ export interface CartItem {
   currency: string;
   stripePriceId: string | null;
   mercadopagoProductId: string | null;
+  hasFreeChapters: boolean;
   addedAt: string;
 }
 
 interface CartState {
   items: CartItem[];
+  buyItems: Record<string, boolean>;
   selectedPaymentMethod: "stripe" | "mercadopago" | null;
   isCartSidebarOpen: boolean;
+  lastCheckoutItems: CartItem[] | null;
+  lastCheckoutBuyItems: Record<string, boolean>;
 
   addItem: (item: CartItem) => void;
   removeItem: (courseId: string) => void;
   clearCart: () => void;
   replaceCart: (items: CartItem[]) => void;
+  setBuyItem: (courseId: string, buy: boolean) => void;
   setSelectedPaymentMethod: (method: "stripe" | "mercadopago" | null) => void;
   setCartSidebarOpen: (open: boolean) => void;
   toggleCartSidebar: () => void;
+  setLastCheckout: (items: CartItem[], buyItems: Record<string, boolean>) => void;
+  clearLastCheckout: () => void;
 
   getItemCount: () => number;
   isInCart: (courseId: string) => boolean;
@@ -38,8 +45,11 @@ export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
+      buyItems: {},
       selectedPaymentMethod: null,
       isCartSidebarOpen: false,
+      lastCheckoutItems: null,
+      lastCheckoutBuyItems: {},
 
       addItem: (item) =>
         set((state) => {
@@ -50,20 +60,33 @@ export const useCartStore = create<CartState>()(
         }),
 
       removeItem: (courseId) =>
-        set((state) => ({
-          items: state.items.filter((i) => i.courseId !== courseId),
-        })),
+        set((state) => {
+          const { [courseId]: _, ...restBuyItems } = state.buyItems;
+          return {
+            items: state.items.filter((i) => i.courseId !== courseId),
+            buyItems: restBuyItems,
+          };
+        }),
 
-      clearCart: () => set({ items: [], selectedPaymentMethod: null }),
+      clearCart: () => set({ items: [], buyItems: {}, selectedPaymentMethod: null }),
 
       replaceCart: (items) => set({ items }),
+
+      setBuyItem: (courseId, buy) =>
+        set((state) => ({
+          buyItems: { ...state.buyItems, [courseId]: buy },
+        })),
 
       setSelectedPaymentMethod: (method) => set({ selectedPaymentMethod: method }),
 
       setCartSidebarOpen: (open) => set({ isCartSidebarOpen: open }),
 
-      toggleCartSidebar: () =>
-        set((state) => ({ isCartSidebarOpen: !state.isCartSidebarOpen })),
+      toggleCartSidebar: () => set((state) => ({ isCartSidebarOpen: !state.isCartSidebarOpen })),
+
+      setLastCheckout: (items, buyItems) =>
+        set({ lastCheckoutItems: items, lastCheckoutBuyItems: buyItems }),
+
+      clearLastCheckout: () => set({ lastCheckoutItems: null, lastCheckoutBuyItems: {} }),
 
       getItemCount: () => get().items.length,
 
@@ -75,7 +98,10 @@ export const useCartStore = create<CartState>()(
       name: "cart-storage",
       partialize: (state) => ({
         items: state.items,
+        buyItems: state.buyItems,
         selectedPaymentMethod: state.selectedPaymentMethod,
+        lastCheckoutItems: state.lastCheckoutItems,
+        lastCheckoutBuyItems: state.lastCheckoutBuyItems,
       }),
     },
   ),

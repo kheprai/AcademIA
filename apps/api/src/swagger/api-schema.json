@@ -265,6 +265,17 @@
         }
       }
     },
+    "/api/file/proxy/*": {
+      "get": {
+        "operationId": "FileController_proxyFile",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/file": {
       "post": {
         "operationId": "FileController_uploadFile",
@@ -2604,6 +2615,24 @@
                 }
               ]
             }
+          },
+          {
+            "name": "filterLanguage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "en",
+              "anyOf": [
+                {
+                  "const": "en",
+                  "type": "string"
+                },
+                {
+                  "const": "es",
+                  "type": "string"
+                }
+              ]
+            }
           }
         ],
         "responses": {
@@ -3112,6 +3141,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/EnrollCourseResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/course/{courseId}/enroll": {
+      "post": {
+        "operationId": "CourseController_instantEnroll",
+        "parameters": [
+          {
+            "name": "courseId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InstantEnrollResponse"
                 }
               }
             }
@@ -5850,6 +5906,49 @@
         }
       }
     },
+    "/api/category/menu": {
+      "get": {
+        "operationId": "CategoryController_getMenuCategories",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetMenuCategoriesResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/category/page/{slug}": {
+      "get": {
+        "operationId": "CategoryController_getCategoryPage",
+        "parameters": [
+          {
+            "name": "slug",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetCategoryPageResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/category/{id}": {
       "get": {
         "operationId": "CategoryController_getCategoryById",
@@ -6528,6 +6627,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ListOrdersResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/orders/{id}/public": {
+      "get": {
+        "operationId": "OrderController_getOrderPublic",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetOrderPublicResponse"
                 }
               }
             }
@@ -8155,6 +8281,156 @@
           }
         }
       }
+    },
+    "/api/registration-attempts": {
+      "get": {
+        "operationId": "RegistrationAttemptsController_getAll",
+        "parameters": [
+          {
+            "name": "keyword",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registered",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "type": "number"
+            }
+          },
+          {
+            "name": "perPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "sort",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "anyOf": [
+                {
+                  "const": "createdAt",
+                  "type": "string"
+                },
+                {
+                  "const": "phone",
+                  "type": "string"
+                },
+                {
+                  "const": "source",
+                  "type": "string"
+                },
+                {
+                  "const": "registered",
+                  "type": "string"
+                },
+                {
+                  "const": "-createdAt",
+                  "type": "string"
+                },
+                {
+                  "const": "-phone",
+                  "type": "string"
+                },
+                {
+                  "const": "-source",
+                  "type": "string"
+                },
+                {
+                  "const": "-registered",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetAllResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/registration-attempts/stats": {
+      "get": {
+        "operationId": "RegistrationAttemptsController_getStats",
+        "parameters": [
+          {
+            "name": "dateFrom",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dateTo",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GetStatsResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "info": {
@@ -8173,6 +8449,62 @@
           "phone": {
             "pattern": "^\\+[1-9]\\d{6,14}$",
             "type": "string"
+          },
+          "context": {
+            "anyOf": [
+              {
+                "const": "login",
+                "type": "string"
+              },
+              {
+                "const": "register",
+                "type": "string"
+              }
+            ]
+          },
+          "source": {
+            "anyOf": [
+              {
+                "const": "register",
+                "type": "string"
+              },
+              {
+                "const": "checkout",
+                "type": "string"
+              }
+            ]
+          },
+          "cartSnapshot": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "courseId": {
+                  "type": "string"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "priceInCents": {
+                  "type": "number"
+                },
+                "mercadopagoPriceInCents": {
+                  "type": "number"
+                },
+                "currency": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "courseId",
+                "title",
+                "priceInCents",
+                "currency"
+              ]
+            }
+          },
+          "termsAccepted": {
+            "type": "boolean"
           }
         },
         "required": [
@@ -8868,104 +9200,62 @@
           "data": {
             "type": "object",
             "properties": {
-              "fiveMostPopularCourses": {
+              "totalAttempts": {
+                "type": "number"
+              },
+              "totalRegistered": {
+                "type": "number"
+              },
+              "conversionRate": {
+                "type": "number"
+              },
+              "bySource": {
                 "type": "array",
                 "items": {
                   "type": "object",
                   "properties": {
-                    "courseName": {
+                    "source": {
                       "type": "string"
                     },
-                    "studentCount": {
+                    "count": {
                       "type": "number"
                     }
                   },
                   "required": [
-                    "courseName",
-                    "studentCount"
+                    "source",
+                    "count"
                   ]
                 }
               },
-              "totalCoursesCompletionStats": {
-                "type": "object",
-                "properties": {
-                  "completionPercentage": {
-                    "type": "number"
-                  },
-                  "totalCoursesCompletion": {
-                    "type": "number"
-                  },
-                  "totalCourses": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "completionPercentage",
-                  "totalCoursesCompletion",
-                  "totalCourses"
-                ]
-              },
-              "conversionAfterFreemiumLesson": {
-                "type": "object",
-                "properties": {
-                  "conversionPercentage": {
-                    "type": "number"
-                  },
-                  "purchasedCourses": {
-                    "type": "number"
-                  },
-                  "remainedOnFreemium": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "conversionPercentage",
-                  "purchasedCourses",
-                  "remainedOnFreemium"
-                ]
-              },
-              "courseStudentsStats": {
-                "type": "object",
-                "patternProperties": {
-                  "^(.*)$": {
-                    "type": "object",
-                    "properties": {
-                      "newStudentsCount": {
-                        "type": "number"
-                      }
+              "daily": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": "string"
                     },
-                    "required": [
-                      "newStudentsCount"
-                    ]
-                  }
+                    "attempts": {
+                      "type": "number"
+                    },
+                    "registered": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "date",
+                    "attempts",
+                    "registered"
+                  ]
                 }
-              },
-              "avgQuizScore": {
-                "type": "object",
-                "properties": {
-                  "correctAnswerCount": {
-                    "type": "number"
-                  },
-                  "wrongAnswerCount": {
-                    "type": "number"
-                  },
-                  "answerCount": {
-                    "type": "number"
-                  }
-                },
-                "required": [
-                  "correctAnswerCount",
-                  "wrongAnswerCount",
-                  "answerCount"
-                ]
               }
             },
             "required": [
-              "fiveMostPopularCourses",
-              "totalCoursesCompletionStats",
-              "conversionAfterFreemiumLesson",
-              "courseStudentsStats",
-              "avgQuizScore"
+              "totalAttempts",
+              "totalRegistered",
+              "conversionRate",
+              "bySource",
+              "daily"
             ]
           }
         },
@@ -12931,6 +13221,9 @@
                 },
                 "baseLanguage": {
                   "type": "string"
+                },
+                "isFeatured": {
+                  "type": "boolean"
                 }
               },
               "required": [
@@ -13226,6 +13519,9 @@
                 },
                 "baseLanguage": {
                   "type": "string"
+                },
+                "isFeatured": {
+                  "type": "boolean"
                 }
               },
               "required": [
@@ -13425,6 +13721,9 @@
                 },
                 "baseLanguage": {
                   "type": "string"
+                },
+                "isFeatured": {
+                  "type": "boolean"
                 }
               },
               "required": [
@@ -13721,6 +14020,9 @@
               },
               "mercadopagoPriceInCents": {
                 "type": "number"
+              },
+              "isFeatured": {
+                "type": "boolean"
               },
               "thumbnailUrl": {
                 "type": "string"
@@ -14335,6 +14637,9 @@
               "mercadopagoPriceInCents": {
                 "type": "number"
               },
+              "isFeatured": {
+                "type": "boolean"
+              },
               "thumbnailUrl": {
                 "type": "string"
               },
@@ -14594,6 +14899,9 @@
                 "type": "string"
               }
             ]
+          },
+          "isFeatured": {
+            "type": "boolean"
           }
         }
       },
@@ -14725,6 +15033,25 @@
         ]
       },
       "EnrollCourseResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "InstantEnrollResponse": {
         "type": "object",
         "properties": {
           "data": {
@@ -20982,13 +21309,115 @@
                       "type": "null"
                     }
                   ]
+                },
+                "slug": {
+                  "type": "string"
+                },
+                "showInMenu": {
+                  "type": "boolean"
+                },
+                "displayOrder": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "heroImageS3Key": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "heroImageUrl": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "heroTitle": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "patternProperties": {
+                        "^(.*)$": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "heroSubtitle": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "patternProperties": {
+                        "^(.*)$": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "heroCtaText": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "patternProperties": {
+                        "^(.*)$": {
+                          "type": "string"
+                        }
+                      }
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "heroCtaUrl": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "heroOverlayColor": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
                 }
               },
               "required": [
                 "id",
                 "title",
                 "archived",
-                "createdAt"
+                "createdAt",
+                "slug"
               ]
             }
           },
@@ -21021,6 +21450,181 @@
         "required": [
           "data",
           "pagination"
+        ]
+      },
+      "GetMenuCategoriesResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "title": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "object",
+                      "patternProperties": {
+                        "^(.*)$": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "slug": {
+                  "type": "string"
+                },
+                "displayOrder": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "slug",
+                "displayOrder"
+              ]
+            }
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "GetCategoryPageResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "format": "uuid",
+                "type": "string"
+              },
+              "title": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object",
+                    "patternProperties": {
+                      "^(.*)$": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                ]
+              },
+              "slug": {
+                "type": "string"
+              },
+              "heroImageUrl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroTitle": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "patternProperties": {
+                      "^(.*)$": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroSubtitle": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "patternProperties": {
+                      "^(.*)$": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroCtaText": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "patternProperties": {
+                      "^(.*)$": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroCtaUrl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroOverlayColor": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "slug",
+              "heroImageUrl",
+              "heroTitle",
+              "heroSubtitle",
+              "heroCtaText",
+              "heroCtaUrl",
+              "heroOverlayColor"
+            ]
+          }
+        },
+        "required": [
+          "data"
         ]
       },
       "GetCategoryByIdResponse": {
@@ -21067,13 +21671,115 @@
                     "type": "null"
                   }
                 ]
+              },
+              "slug": {
+                "type": "string"
+              },
+              "showInMenu": {
+                "type": "boolean"
+              },
+              "displayOrder": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroImageS3Key": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroImageUrl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroTitle": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "patternProperties": {
+                      "^(.*)$": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroSubtitle": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "patternProperties": {
+                      "^(.*)$": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroCtaText": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "patternProperties": {
+                      "^(.*)$": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroCtaUrl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroOverlayColor": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             },
             "required": [
               "id",
               "title",
               "archived",
-              "createdAt"
+              "createdAt",
+              "slug"
             ]
           }
         },
@@ -21091,6 +21797,9 @@
                 "type": "string"
               }
             }
+          },
+          "slug": {
+            "type": "string"
           }
         },
         "required": [
@@ -21138,6 +21847,97 @@
           },
           "archived": {
             "type": "boolean"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "showInMenu": {
+            "type": "boolean"
+          },
+          "displayOrder": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "heroImageS3Key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "heroTitle": {
+            "anyOf": [
+              {
+                "type": "object",
+                "patternProperties": {
+                  "^(.*)$": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "heroSubtitle": {
+            "anyOf": [
+              {
+                "type": "object",
+                "patternProperties": {
+                  "^(.*)$": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "heroCtaText": {
+            "anyOf": [
+              {
+                "type": "object",
+                "patternProperties": {
+                  "^(.*)$": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "heroCtaUrl": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "heroOverlayColor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -21185,13 +21985,115 @@
                     "type": "null"
                   }
                 ]
+              },
+              "slug": {
+                "type": "string"
+              },
+              "showInMenu": {
+                "type": "boolean"
+              },
+              "displayOrder": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroImageS3Key": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroImageUrl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroTitle": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "patternProperties": {
+                      "^(.*)$": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroSubtitle": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "patternProperties": {
+                      "^(.*)$": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroCtaText": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "patternProperties": {
+                      "^(.*)$": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroCtaUrl": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "heroOverlayColor": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
               }
             },
             "required": [
               "id",
               "title",
               "archived",
-              "createdAt"
+              "createdAt",
+              "slug"
             ]
           }
         },
@@ -21451,6 +22353,9 @@
                 "type": "string"
               },
               "statusDetail": {
+                "type": "string"
+              },
+              "externalReference": {
                 "type": "string"
               },
               "dateApproved": {
@@ -21903,6 +22808,9 @@
                     },
                     "addedAt": {
                       "type": "string"
+                    },
+                    "hasFreeChapters": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -21919,7 +22827,8 @@
                     "stripePriceId",
                     "mercadopagoProductId",
                     "slug",
-                    "addedAt"
+                    "addedAt",
+                    "hasFreeChapters"
                   ]
                 }
               },
@@ -22110,6 +23019,9 @@
                     },
                     "addedAt": {
                       "type": "string"
+                    },
+                    "hasFreeChapters": {
+                      "type": "boolean"
                     }
                   },
                   "required": [
@@ -22126,7 +23038,8 @@
                     "stripePriceId",
                     "mercadopagoProductId",
                     "slug",
-                    "addedAt"
+                    "addedAt",
+                    "hasFreeChapters"
                   ]
                 }
               },
@@ -22174,6 +23087,9 @@
                 "type": "string"
               },
               "status": {
+                "type": "string"
+              },
+              "debugPaymentUrl": {
                 "type": "string"
               }
             },
@@ -22448,6 +23364,91 @@
             },
             "required": [
               "orders"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "GetOrderPublicResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "userId": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "provider": {
+                "type": "string"
+              },
+              "totalAmountInCents": {
+                "type": "number"
+              },
+              "currency": {
+                "type": "string"
+              },
+              "createdAt": {
+                "type": "string"
+              },
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "courseId": {
+                      "type": "string"
+                    },
+                    "courseTitle": {
+                      "type": "string"
+                    },
+                    "courseThumbnailUrl": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    },
+                    "priceInCents": {
+                      "type": "number"
+                    },
+                    "currency": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "courseId",
+                    "courseTitle",
+                    "courseThumbnailUrl",
+                    "priceInCents",
+                    "currency"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "id",
+              "userId",
+              "status",
+              "provider",
+              "totalAmountInCents",
+              "currency",
+              "createdAt",
+              "items"
             ]
           }
         },
@@ -25623,6 +26624,139 @@
         },
         "required": [
           "data"
+        ]
+      },
+      "GetAllResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "phone": {
+                  "type": "string"
+                },
+                "source": {
+                  "type": "string"
+                },
+                "cartSnapshot": {},
+                "termsAccepted": {
+                  "type": "boolean"
+                },
+                "registered": {
+                  "type": "boolean"
+                },
+                "registeredAt": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "userId": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "firstName": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "lastName": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "totalPriceUsdCents": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "totalPriceArsCents": {
+                  "anyOf": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "createdAt": {
+                  "type": "string"
+                },
+                "updatedAt": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "phone",
+                "source",
+                "termsAccepted",
+                "registered",
+                "createdAt",
+                "updatedAt"
+              ]
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "totalItems": {
+                "type": "number"
+              },
+              "page": {
+                "type": "number"
+              },
+              "perPage": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "totalItems",
+              "page",
+              "perPage"
+            ]
+          },
+          "appliedFilters": {
+            "type": "object",
+            "patternProperties": {
+              "^(.*)$": {}
+            }
+          }
+        },
+        "required": [
+          "data",
+          "pagination"
         ]
       }
     }

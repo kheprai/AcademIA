@@ -33,6 +33,7 @@ import {
   TUS_VERSION,
 } from "src/file/file.constants";
 import { FileGuard } from "src/file/guards/file.guard";
+import { S3Service } from "src/s3/s3.service";
 import { USER_ROLES } from "src/user/schemas/userRoles";
 
 import { FileService } from "./file.service";
@@ -56,7 +57,32 @@ export class FileController {
   constructor(
     private readonly fileService: FileService,
     private readonly tusUploadService: TusUploadService,
+    private readonly s3Service: S3Service,
   ) {}
+
+  @Public()
+  @Get("proxy/*")
+  async proxyFile(@Req() req: Request, @Res() res: Response) {
+    const fileKey = req.params[0];
+    if (!fileKey || fileKey === "_placeholder") {
+      return res.status(302).redirect("/app/assets/placeholders/card-placeholder.jpg");
+    }
+
+    try {
+      const { stream, contentType, contentLength } =
+        await this.s3Service.getFileStreamWithMetadata(fileKey);
+
+      res.set("Content-Type", contentType);
+      if (contentLength) {
+        res.set("Content-Length", String(contentLength));
+      }
+      res.set("Cache-Control", "public, max-age=3600");
+
+      stream.pipe(res);
+    } catch {
+      return res.status(404).json({ message: "File not found" });
+    }
+  }
 
   @Roles(...Object.values(USER_ROLES))
   @Post()

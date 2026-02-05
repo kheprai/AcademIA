@@ -22,18 +22,29 @@ import { EmptyCartState } from "./EmptyCartState";
 export function CartSidebar() {
   const { t } = useTranslation();
   const items = useCartStore((state) => state.items);
+  const buyItems = useCartStore((state) => state.buyItems);
+  const setBuyItem = useCartStore((state) => state.setBuyItem);
   const isOpen = useCartStore((state) => state.isCartSidebarOpen);
   const setOpen = useCartStore((state) => state.setCartSidebarOpen);
   const { defaultMethod, currency } = useCartCurrency();
 
+  const isFreeItem = (item: (typeof items)[number]) =>
+    item.priceInCents === 0 && !item.stripePriceId && !item.mercadopagoProductId;
+
+  const isBuyForced = (item: (typeof items)[number]) => !isFreeItem(item) && !item.hasFreeChapters;
+
+  const isItemBuy = (item: (typeof items)[number]) =>
+    isFreeItem(item) || isBuyForced(item) || buyItems[item.courseId] !== false;
+
+  const purchaseItems = items.filter((i) => !isFreeItem(i) && isItemBuy(i));
+
   const subtotal =
     defaultMethod === "mercadopago"
-      ? items.reduce((sum, item) => sum + item.mercadopagoPriceInCents, 0)
-      : items.reduce((sum, item) => sum + item.priceInCents, 0);
+      ? purchaseItems.reduce((sum, item) => sum + item.mercadopagoPriceInCents, 0)
+      : purchaseItems.reduce((sum, item) => sum + item.priceInCents, 0);
 
-  const allFree = items.length > 0 && items.every(
-    (item) => item.priceInCents === 0 && !item.stripePriceId && !item.mercadopagoProductId,
-  );
+  const allFree = items.length > 0 && items.every(isFreeItem);
+  const allEnrollOnly = !allFree && purchaseItems.length === 0;
 
   return (
     <Sheet open={isOpen} onOpenChange={setOpen}>
@@ -42,9 +53,7 @@ export function CartSidebar() {
           <SheetTitle>
             {t("cart.sidebar.title")} ({items.length})
           </SheetTitle>
-          <SheetDescription className="sr-only">
-            {t("cart.sidebar.title")}
-          </SheetDescription>
+          <SheetDescription className="sr-only">{t("cart.sidebar.title")}</SheetDescription>
         </SheetHeader>
 
         {items.length === 0 ? (
@@ -54,19 +63,28 @@ export function CartSidebar() {
             <div className="-mx-2 flex-1 overflow-y-auto px-2">
               <div className="divide-y">
                 {items.map((item) => (
-                  <CartItemCard key={item.courseId} item={item} variant="sidebar" />
+                  <CartItemCard
+                    key={item.courseId}
+                    item={item}
+                    variant="sidebar"
+                    buyMode={isFreeItem(item) ? undefined : buyItems[item.courseId] !== false}
+                    onBuyModeChange={
+                      isFreeItem(item) ? undefined : (buy) => setBuyItem(item.courseId, buy)
+                    }
+                    isBuyForced={isBuyForced(item)}
+                  />
                 ))}
               </div>
             </div>
 
             <div className="border-t pt-4">
-              <CurrencyToggle className="mb-2 justify-end" />
+              {!allFree && !allEnrollOnly && <CurrencyToggle className="mb-2 justify-end" />}
               <div className="flex items-center justify-between pb-3">
                 <span className="text-sm font-medium text-neutral-600">
                   {t("cart.sidebar.subtotal")}
                 </span>
                 <span className="text-lg font-bold">
-                  {allFree
+                  {allFree || allEnrollOnly
                     ? t("landing.courses.card.free")
                     : formatPrice(subtotal, currency, getCurrencyLocale(currency))}
                 </span>
@@ -75,7 +93,9 @@ export function CartSidebar() {
               <div className="flex flex-col gap-2">
                 <Button variant="primary" className="w-full" asChild>
                   <Link to="/checkout" onClick={() => setOpen(false)}>
-                    {t("cart.sidebar.checkout")}
+                    {allFree || allEnrollOnly
+                      ? t("cart.button.acquireFree", "Adquirir Gratis")
+                      : t("cart.sidebar.checkout")}
                   </Link>
                 </Button>
                 <Button variant="outline" className="w-full" asChild>

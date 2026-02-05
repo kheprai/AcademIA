@@ -25,9 +25,18 @@ export const createCategoryFactory = (db: DatabasePg) => {
         en: departmentName + randomHex,
         es: departmentName + randomHex + " (ES)",
       },
+      slug: faker.helpers.slugify(departmentName + randomHex).toLowerCase(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       archived: false,
+      showInMenu: false,
+      displayOrder: null,
+      heroImageS3Key: null,
+      heroTitle: null,
+      heroSubtitle: null,
+      heroCtaText: null,
+      heroCtaUrl: null,
+      heroOverlayColor: null,
     };
   });
 };

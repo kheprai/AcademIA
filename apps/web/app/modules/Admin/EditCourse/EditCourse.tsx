@@ -249,10 +249,11 @@ const EditCourse = () => {
             courseId={course?.id || ""}
             title={course?.title}
             description={course?.description}
-            categoryId={course?.categoryId}
+            categoryId={course?.categoryId ?? undefined}
             thumbnailS3SingedUrl={course?.thumbnailS3SingedUrl}
             thumbnailS3Key={course?.thumbnailS3Key}
             hasCertificate={course?.hasCertificate || false}
+            isFeatured={course?.isFeatured || false}
             courseLanguage={courseLanguage}
           />
         </TabsContent>

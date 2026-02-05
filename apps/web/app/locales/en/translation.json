@@ -184,7 +184,8 @@
     "ariaLabels": {
       "goToAvailableCourses": "Go to available courses"
     },
-    "qa": "Q&A"
+    "qa": "Q&A",
+    "registrationAttempts": "Registration Attempts"
   },
   "newsView": {
     "header": "News",
@@ -742,10 +743,31 @@
     "header": "Create new category",
     "subHeader": "Enter a title for your new category. Click save when you're done.",
     "editCategoryHeader": "Category Information",
+    "section": {
+      "basicInfo": "Basic Information",
+      "menuConfig": "Menu Configuration",
+      "heroConfig": "Hero Section"
+    },
     "field": {
       "title": "Title",
+      "titleEn": "Title (English)",
+      "titleEs": "Title (Spanish)",
       "status": "Status",
-      "newCategoryName": "New Category Name"
+      "newCategoryName": "New Category Name",
+      "slug": "Slug",
+      "showInMenu": "Show in Navigation Menu",
+      "showInMenuDisabledHint": "Configure hero image and title first",
+      "displayOrder": "Display Order",
+      "heroImage": "Hero Image",
+      "removeHeroImage": "Remove Image",
+      "heroTitleEn": "Hero Title (English)",
+      "heroTitleEs": "Hero Title (Spanish)",
+      "heroSubtitleEn": "Hero Subtitle (English)",
+      "heroSubtitleEs": "Hero Subtitle (Spanish)",
+      "heroCtaTextEn": "CTA Button Text (English)",
+      "heroCtaTextEs": "CTA Button Text (Spanish)",
+      "heroCtaUrl": "CTA URL",
+      "heroOverlayColor": "Overlay Color"
     },
     "placeholder": {
       "categoryName": "Enter category name..."
@@ -767,6 +789,53 @@
       "back": "Back"
     }
   },
+  "registrationAttemptsView": {
+    "header": "Registration Attempts",
+    "loading": "Loading...",
+    "noData": "No registration attempts found.",
+    "stats": {
+      "totalAttempts": "Total Attempts",
+      "totalRegistered": "Registered",
+      "conversionRate": "Conversion Rate",
+      "bySource": "By Source"
+    },
+    "chart": {
+      "title": "Daily Attempts",
+      "noData": "No data for the selected period.",
+      "registered": "Registered",
+      "notRegistered": "Not Registered"
+    },
+    "filters": {
+      "searchByPhone": "Search by phone...",
+      "source": "Source",
+      "registered": "Registered",
+      "clearDates": "Clear"
+    },
+    "columns": {
+      "phone": "Phone",
+      "source": "Source",
+      "name": "Name",
+      "totalUsd": "Total USD",
+      "totalArs": "Total ARS",
+      "cartTotal": "Items",
+      "cartFree": "Free",
+      "cartPaid": "Paid",
+      "cartItems": "Cart Items",
+      "terms": "Terms",
+      "registered": "Registered",
+      "registeredAt": "Registered At",
+      "createdAt": "Created At"
+    },
+    "cart": {
+      "title": "Title",
+      "priceUsd": "Price USD",
+      "priceArs": "Price ARS"
+    },
+    "badge": {
+      "yes": "Yes",
+      "no": "No"
+    }
+  },
   "adminUsersView": {
     "filters": {
       "placeholder": {
@@ -779,6 +848,7 @@
       "firstName": "First name",
       "lastName": "Last name",
       "email": "Email",
+      "phone": "Phone",
       "role": "Role",
       "status": "Status",
       "createdAt": "Created At",
@@ -868,6 +938,7 @@
       "firstName": "First name",
       "lastName": "Last name",
       "email": "Email",
+      "phone": "Phone",
       "role": "Role",
       "language": "Language",
       "status": "Status",
@@ -1133,7 +1204,8 @@
         "category": "Category",
         "description": "Description",
         "thumbnail": "Thumbnail",
-        "baseLanguage": "Base language"
+        "baseLanguage": "Base language",
+        "featured": "Featured Course"
       },
       "placeholder": {
         "title": "Enter title",
@@ -1644,7 +1716,7 @@
     "other": {
       "cannotFindCourses": "We could not find any courses",
       "changeSearchCriteria": "Please change the search criteria or try again later",
-      "freeLessons": "Free Lessons!",
+      "freeLessons": "Free Preview!",
       "successfullyEnrolledToCourse": "Successfully enrolled in the course"
     },
     "breadcrumbs": {
@@ -2261,7 +2333,8 @@
     "createQA": "Create new Q&A",
     "analytics": "Analytics",
     "progress": "Progress",
-    "notFound": "Page Not Found"
+    "notFound": "Page Not Found",
+    "registrationAttempts": "Registration Attempts"
   },
   "error": {
     "notFound": {
@@ -2509,15 +2582,22 @@
   "landing": {
     "nav": {
       "courses": "Courses",
-      "workshops": "Workshops",
-      "consulting": "Consulting",
+      "servicios": "Services",
+      "serviciosAll": "View all",
+      "capacitaciones": "Training",
+      "masterclasses": "Master Classes",
+      "talleres": "Workshops",
+      "charlas": "Talks",
+      "consultoria": "Consulting",
+      "implementaciones": "Implementations",
       "tools": "AI Tools",
       "news": "News",
       "resources": "Resources",
       "faq": "FAQ",
       "about": "About AcademIA",
       "contact": "Contact",
-      "language": "Language"
+      "language": "Language",
+      "viewAllCourses": "View all courses"
     },
     "auth": {
       "login": "Sign In",
@@ -2552,13 +2632,151 @@
         }
       }
     },
-    "workshops": {
-      "title": "Workshops",
-      "description": "Coming soon you will find practical workshops and live sessions with industry experts."
+    "servicios": {
+      "title": "Services for Institutions",
+      "description": "Empower your institution with our AI and technology training solutions.",
+      "cta": "Contact Us",
+      "exploreService": "Learn more",
+      "services": {
+        "capacitaciones": {
+          "title": "Training Programs",
+          "description": "Intensive training programs designed for institutional teams."
+        },
+        "masterclasses": {
+          "title": "Master Classes",
+          "description": "Expert-led sessions by leaders in artificial intelligence."
+        },
+        "talleres": {
+          "title": "Workshops",
+          "description": "Practical, hands-on workshops to learn by doing."
+        },
+        "charlas": {
+          "title": "Talks",
+          "description": "Presentations and conferences on the latest AI trends."
+        },
+        "consultoria": {
+          "title": "Consulting",
+          "description": "Personalized advisory for your institution's digital transformation."
+        },
+        "implementaciones": {
+          "title": "Implementations",
+          "description": "AI solution development and integration tailored to your institution."
+        }
+      }
     },
-    "consulting": {
+    "capacitaciones": {
+      "title": "Training Programs",
+      "subtitle": "Institutional AI Training",
+      "description": "Training programs designed for teams looking to incorporate artificial intelligence into their work processes.",
+      "features": {
+        "custom": {
+          "title": "Custom Programs",
+          "description": "We design content based on your team's specific needs."
+        },
+        "practice": {
+          "title": "Practical Approach",
+          "description": "Real-world exercises and cases from your industry."
+        },
+        "certification": {
+          "title": "Certification",
+          "description": "Completion certificates for all participants."
+        }
+      }
+    },
+    "masterclasses": {
+      "title": "Master Classes",
+      "subtitle": "Learn from the Best",
+      "description": "Expert-led sessions with recognized professionals in artificial intelligence, machine learning and digital transformation.",
+      "features": {
+        "experts": {
+          "title": "Top-tier Experts",
+          "description": "Professionals with real experience in large-scale AI projects."
+        },
+        "interactive": {
+          "title": "Interactive Format",
+          "description": "Sessions with Q&A, discussion and networking opportunities."
+        },
+        "recording": {
+          "title": "Recording Access",
+          "description": "Review the content anytime after the session."
+        }
+      }
+    },
+    "talleres": {
+      "title": "Workshops",
+      "subtitle": "Learn by Doing",
+      "description": "Practical workshops where your team works with real AI tools on expert-guided projects.",
+      "features": {
+        "handson": {
+          "title": "100% Hands-on",
+          "description": "Every workshop includes exercises with real tools and datasets."
+        },
+        "small": {
+          "title": "Small Groups",
+          "description": "Maximum 20 participants to ensure personalized attention."
+        },
+        "materials": {
+          "title": "Materials Included",
+          "description": "Notebooks, guides and resources to keep practicing after the workshop."
+        }
+      }
+    },
+    "charlas": {
+      "title": "Talks",
+      "subtitle": "Inspiration & Trends",
+      "description": "Conferences and presentations on the latest trends in artificial intelligence and their business impact.",
+      "features": {
+        "trends": {
+          "title": "Current Trends",
+          "description": "Analysis of the latest developments in AI and their business applications."
+        },
+        "cases": {
+          "title": "Success Stories",
+          "description": "Concrete examples of institutions transforming their processes with AI."
+        },
+        "networking": {
+          "title": "Networking",
+          "description": "Connect with other professionals and industry leaders."
+        }
+      }
+    },
+    "consultoria": {
       "title": "Consulting",
-      "description": "Coming soon we will offer personalized consulting services for companies and professionals."
+      "subtitle": "Digital Transformation with AI",
+      "description": "Personalized advisory to identify AI implementation opportunities in your organization.",
+      "features": {
+        "diagnostic": {
+          "title": "Initial Assessment",
+          "description": "We evaluate your current processes and identify AI improvement opportunities."
+        },
+        "roadmap": {
+          "title": "Roadmap",
+          "description": "Step-by-step implementation plan tailored to your reality and budget."
+        },
+        "support": {
+          "title": "Ongoing Support",
+          "description": "Continuous support during implementation to ensure results."
+        }
+      }
+    },
+    "implementaciones": {
+      "title": "Implementations",
+      "subtitle": "Custom AI Solutions",
+      "description": "Development and integration of artificial intelligence solutions tailored to your institution's needs and processes.",
+      "features": {
+        "integration": {
+          "title": "System Integration",
+          "description": "We connect AI tools with your existing platforms and workflows."
+        },
+        "development": {
+          "title": "Custom Development",
+          "description": "We build personalized AI solutions to address your institution's specific challenges."
+        },
+        "maintenance": {
+          "title": "Support & Maintenance",
+          "description": "Monitoring, updates and continuous improvement of implemented solutions."
+        }
+      }
     },
     "tools": {
       "title": "AI Tools",
@@ -2609,7 +2827,7 @@
         "chapters": "{{count}} chapters",
         "chapter": "1 chapter",
         "free": "Free",
-        "freeLessons": "Free lessons",
+        "freeLessons": "Free preview",
         "enrolled": "Enrolled",
         "viewCourse": "View course",
         "viewDetails": "View details",
@@ -2648,6 +2866,8 @@
     "courseDetail": {
       "enroll": "Enroll",
       "enrollFree": "Enroll for Free",
+      "enrolling": "Enrolling...",
+      "enrolledSuccess": "Enrolled successfully!",
       "loginToEnroll": "Sign in to enroll",
       "chapters": "Course Content",
       "chaptersCount": "{{count}} chapters",
@@ -2655,9 +2875,23 @@
       "instructor": "Instructor",
       "alreadyEnrolled": "Already enrolled",
       "continueLearning": "Continue learning",
-      "freeChapters": "Includes free lessons",
+      "freeChapters": "Includes free preview",
       "backToCourses": "Back to courses",
       "notFound": "Course not found",
+      "startFreeLessons": "Start Free Preview",
+      "enrollToUnlock": "Enroll to unlock",
+      "purchaseToUnlock": "Purchase to unlock",
+      "signInToAccess": "Sign in to access",
+      "courseContent": "Course Content",
+      "freeCourse": "Free Course",
+      "enrolled": "Enrolled",
+      "buyCourse": "Buy Course",
+      "lessonTypes": {
+        "content": "Lesson",
+        "quiz": "Quiz",
+        "ai_mentor": "AI Mentor",
+        "embed": "External"
+      },
       "languageNotAvailable": {
         "title": "Language not available",
         "description": "The course \"{{course}}\" is not available in {{language}}.",
@@ -2698,6 +2932,49 @@
       "noResults": "No questions found",
       "contactSupport": "Can't find what you're looking for?",
       "contactUs": "Contact us"
+    },
+    "categoryPage": {
+      "notFound": "Category not found",
+      "loading": "Loading...",
+      "featuredCourses": "Featured Courses",
+      "viewCourse": "View Course",
+      "noCoursesAvailable": "No courses available in this category yet.",
+      "viewAllCourses": "View all courses",
+      "viewCategoryCourses": "View {{category}} courses",
+      "stats": {
+        "title": "Why choose our courses",
+        "students": "Students",
+        "studentsDesc": "Learning with us",
+        "courses": "Courses",
+        "coursesDesc": "Available for you",
+        "online": "Online",
+        "onlineDesc": "Study anywhere, anytime",
+        "support": "Support",
+        "supportDesc": "Always available for you"
+      },
+      "testimonials": {
+        "title": "What our students say",
+        "student1": {
+          "name": "Maria Garcia",
+          "role": "Professional",
+          "quote": "The courses completely transformed my professional skills. Highly recommended!"
+        },
+        "student2": {
+          "name": "Carlos Lopez",
+          "role": "Entrepreneur",
+          "quote": "Excellent content quality and very practical approach. I apply what I learn every day."
+        },
+        "student3": {
+          "name": "Ana Rodriguez",
+          "role": "Student",
+          "quote": "The platform is intuitive and the courses are very well structured. Great learning experience!"
+        }
+      },
+      "cta": {
+        "headline": "Ready to start learning?",
+        "subtitle": "Join thousands of students who are already improving their skills",
+        "button": "Explore courses"
+      }
     }
   },
   "cart": {
@@ -2707,7 +2984,8 @@
       "viewCart": "View Cart",
       "checkout": "Checkout",
       "subtotal": "Subtotal",
-      "itemCount": "{{count}} item(s)"
+      "itemCount": "{{count}} item(s)",
+      "enrollOptionsHint": "Some courses offer free enrollment. Configure options in the full cart."
     },
     "page": {
       "title": "Shopping Cart",
@@ -2715,6 +2993,11 @@
       "proceedToCheckout": "Proceed to Checkout",
       "removeItem": "Remove",
       "clearCart": "Clear Cart"
+    },
+    "removeConfirm": {
+      "message": "Remove \"{{title}}\"?",
+      "confirm": "Yes",
+      "cancel": "No"
     },
     "checkout": {
       "title": "Checkout",
@@ -2728,16 +3011,50 @@
       "freeEnrollment": "Free Enrollment",
       "freeEnrollmentDesc": "These courses are free. Click below to enroll instantly.",
       "freeEnrollmentSuccess": "You have been enrolled in the free courses!",
-      "mixedCartNote": "Free courses will be enrolled automatically when you complete your payment."
+      "mixedCartNote": "Free courses will be enrolled automatically when you complete your payment.",
+      "enrollOnlyDesc": "You'll be enrolled in the selected courses. You can access free content and purchase full access later.",
+      "enrollNow": "Enroll now",
+      "enrollLabel": "Enroll only",
+      "enrollTooltip": "Free access to the course's free content.",
+      "enrollAndBuyLabel": "Enroll and buy",
+      "enrollAndBuyTooltip": "Full access to all course content.",
+      "nofreeContent": "This course has no free content.",
+      "enrollOnlyNote": "{{count}} course(s) enroll-only (free)",
+      "enrollInfo": "Enrollment options"
     },
     "confirmation": {
-      "title": "Order Confirmed!",
-      "subtitle": "Your payment was successful and you have been enrolled in the courses.",
-      "orderId": "Order ID",
+      "title": "Purchase Successful!",
+      "subtitle": "Your payment was processed successfully. You can now access your courses.",
+      "subtitleGeneric": "The payment was processed successfully.",
+      "subtitleGuest": "Your payment was processed successfully.",
+      "orderId": "Order",
+      "enrolledCourses": "Courses",
+      "goToCourse": "Go to Course",
+      "browseMore": "Browse Courses",
+      "notFound": "Order not found",
+      "goToLibrary": "Go to My Courses",
+      "loginToAccess": "Log in to access your courses.",
+      "login": "Log in",
+      "notYourOrder": "This purchase does not belong to your account.",
+      "redirecting": "Redirecting to your courses in {{seconds}}s...",
+      "awaitingPaymentTitle": "Awaiting Payment...",
+      "awaitingPaymentDesc": "Use the payment link we sent to your WhatsApp to complete your purchase.",
+      "pollingStatus": "Updating automatically...",
+      "statusAwaiting": "Awaiting payment",
+      "orderItems": "Courses in your order"
+    },
+    "success": {
+      "title": "You're all set!",
+      "subtitle": "Your enrollment was successful. You can now access your courses.",
       "enrolledCourses": "Enrolled Courses",
       "goToCourse": "Go to Course",
+      "startLearning": "Start Learning",
+      "goToLibrary": "Go to My Courses",
       "browseMore": "Browse More Courses",
-      "notFound": "Order not found"
+      "purchased": "Purchased",
+      "enrolled": "Enrolled",
+      "genericTitle": "Enrollment Successful!",
+      "genericSubtitle": "You can access your courses from your library."
     },
     "button": {
       "addToCart": "Add to Cart",
@@ -2748,7 +3065,16 @@
       "removeFromCart": "Remove from Cart",
       "viewCart": "View Cart",
       "goToCheckout": "Go to Checkout",
-      "enrollFree": "Enroll Free"
+      "enrollFree": "Enroll Free",
+      "addFree": "Add (Free)",
+      "enrollFreeShort": "Enroll Free",
+      "enrollPreview": "Enroll Preview",
+      "buy": "Buy",
+      "buyNow": "Buy Now",
+      "buyCourse": "Buy Course",
+      "preview": "Preview",
+      "addToCartFull": "Add to Cart",
+      "free": "Free"
     },
     "currency": {
       "toggle": "Currency"

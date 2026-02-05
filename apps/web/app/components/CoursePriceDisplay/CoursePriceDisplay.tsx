@@ -98,28 +98,43 @@ export function CoursePriceDisplay({
   const hasStripe = !!stripePriceId && priceInCents > 0;
   const hasMercadoPago = !!mercadopagoProductId && mercadopagoPriceInCents > 0;
   const isFree = !hasStripe && !hasMercadoPago && priceInCents === 0;
+  const isDetail = variant === "detail";
 
-  if (isFree) {
+  if (isFree && isDetail) {
     return (
-      <span
-        className={cn(
-          "font-semibold text-success-700",
-          variant === "detail" ? "text-3xl" : "",
-          className,
-        )}
-      >
+      <div className={cn("text-3xl font-semibold text-success-700", className)}>
         {t("landing.courses.card.free")}
-      </span>
+      </div>
     );
   }
 
-  const isDetail = variant === "detail";
-  const priceSize = isDetail ? "text-2xl font-bold" : "text-sm font-semibold";
+  const cardChipBase = "flex items-center gap-3 rounded-lg border px-3 py-1";
+  const priceSize = isDetail ? "text-2xl font-bold" : "text-base font-bold";
   const stripeLogoHeight = isDetail ? "h-4" : "h-3";
   const mpLogoHeight = isDetail ? "h-10" : "h-[1.875rem]";
 
+  if (isFree) {
+    return (
+      <div className={cn(cardChipBase, "bg-success-50 border-success-200", className)}>
+        <span
+          className={cn(
+            "inline-flex items-center text-base font-bold text-success-700",
+            mpLogoHeight,
+          )}
+        >
+          {t("landing.courses.card.free")}
+        </span>
+      </div>
+    );
+  }
+
   return (
-    <div className={cn("flex items-center gap-3", className)}>
+    <div
+      className={cn(
+        isDetail ? "flex items-center gap-3" : cn(cardChipBase, "bg-primary-50 border-primary-200"),
+        className,
+      )}
+    >
       {hasStripe && (
         <div className="flex flex-col items-center gap-0.5">
           <span className={cn(priceSize, "text-primary-700")}>
@@ -133,10 +148,10 @@ export function CoursePriceDisplay({
       )}
       {hasMercadoPago && (
         <div className="flex items-center gap-1.5">
-          <MercadoPagoLogo className={cn(mpLogoHeight, "w-auto")} />
           <span className={cn(priceSize, "text-primary-700")}>
             {formatPrice(mercadopagoPriceInCents, "ARS", getCurrencyLocale("ARS"))}
           </span>
+          <MercadoPagoLogo className={cn(mpLogoHeight, "w-auto")} />
         </div>
       )}
     </div>

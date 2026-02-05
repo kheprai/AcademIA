@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 
 import { useLogoutUser } from "~/api/mutations";
 import { useCurrentUser } from "~/api/queries/useCurrentUser";
-import { CartIcon } from "~/modules/Cart/CartIcon";
+import { useMenuCategories } from "~/api/queries/useMenuCategories";
 import { Icon } from "~/components/Icon";
 import { PlatformLogo } from "~/components/PlatformLogo";
 import { Button } from "~/components/ui/button";
@@ -19,6 +19,7 @@ import {
 import { UserAvatar } from "~/components/UserProfile/UserAvatar";
 import { USER_ROLE } from "~/config/userRoles";
 import { cn } from "~/lib/utils";
+import { CartIcon } from "~/modules/Cart/CartIcon";
 import {
   useLanguageStore,
   type Language,
@@ -29,15 +30,29 @@ const languages = [
   { code: "en", label: "English", flag: "🇬🇧" },
 ] as const;
 
-const navLinks = [
+type NavItem =
+  | { href: string; key: string; children?: never }
+  | { key: string; href: string; children: { href: string; key: string }[] };
+
+const navLinks: NavItem[] = [
   { href: "/courses", key: "courses" },
-  { href: "/workshops", key: "workshops" },
-  { href: "/consulting", key: "consulting" },
+  {
+    key: "servicios",
+    href: "/servicios",
+    children: [
+      { href: "/servicios/capacitaciones", key: "capacitaciones" },
+      { href: "/servicios/masterclasses", key: "masterclasses" },
+      { href: "/servicios/talleres", key: "talleres" },
+      { href: "/servicios/charlas", key: "charlas" },
+      { href: "/servicios/consultoria", key: "consultoria" },
+      { href: "/servicios/implementaciones", key: "implementaciones" },
+    ],
+  },
   { href: "/tools", key: "tools" },
   { href: "/news", key: "news" },
   { href: "/resources", key: "resources" },
   { href: "/about", key: "about" },
-] as const;
+];
 
 function getRoleLabel(role: string | undefined, t: (key: string) => string): string {
   switch (role) {
@@ -272,13 +287,24 @@ function MobileUserMenu() {
   );
 }
 
+function getCategoryTitle(
+  title: string | Record<string, string> | object,
+  language: string,
+): string {
+  if (typeof title === "string") return title;
+  const record = title as Record<string, string>;
+  return record?.[language] || record?.en || Object.values(record || {})[0] || "";
+}
+
 export function LandingHeader() {
   const { t, i18n } = useTranslation();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [coursesExpanded, setCoursesExpanded] = useState(false);
   const { data: currentUser } = useCurrentUser();
   const isLoggedIn = !!currentUser;
   const { setLanguage } = useLanguageStore();
+  const { data: menuCategories } = useMenuCategories();
 
   const currentLang = languages.find((l) => l.code === i18n.language) || languages[0];
 
@@ -296,18 +322,111 @@ export function LandingHeader() {
           </Link>
 
           <div className="hidden items-center gap-6 lg:flex">
-            {navLinks.map((link) => (
-              <Link
-                key={link.key}
-                to={link.href}
-                className={cn(
-                  "text-sm font-medium transition-colors hover:text-primary-700",
-                  location.pathname === link.href ? "text-primary-700" : "text-neutral-600",
-                )}
-              >
-                {t(`landing.nav.${link.key}`)}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              // Special handling for "courses" - show dropdown if menu categories exist
+              if (link.key === "courses" && menuCategories && menuCategories.length > 0) {
+                return (
+                  <DropdownMenu key={link.key}>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(
+                          "flex cursor-pointer items-center gap-1 text-sm font-medium transition-colors select-none hover:text-primary-700 focus:outline-none",
+                          location.pathname.startsWith("/courses")
+                            ? "text-primary-700"
+                            : "text-neutral-600",
+                        )}
+                      >
+                        {t(`landing.nav.${link.key}`)}
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="min-w-[200px]">
+                      {menuCategories.map((cat) => (
+                        <DropdownMenuItem key={cat.id} asChild>
+                          <Link
+                            to={`/courses/category/${cat.slug}`}
+                            className={cn(
+                              "flex cursor-pointer items-center px-3 py-2 text-sm",
+                              location.pathname === `/courses/category/${cat.slug}`
+                                ? "font-medium text-primary-700"
+                                : "text-neutral-700",
+                            )}
+                          >
+                            {getCategoryTitle(cat.title, i18n.language)}
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link
+                          to="/courses"
+                          className="flex cursor-pointer items-center px-3 py-2 text-sm font-medium text-neutral-900"
+                        >
+                          {t("landing.nav.viewAllCourses", "View all courses")}
+                        </Link>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              }
+
+              return link.children ? (
+                <DropdownMenu key={link.key}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex cursor-pointer items-center gap-1 text-sm font-medium transition-colors select-none hover:text-primary-700 focus:outline-none",
+                        location.pathname.startsWith(link.href)
+                          ? "text-primary-700"
+                          : "text-neutral-600",
+                      )}
+                    >
+                      {t(`landing.nav.${link.key}`)}
+                      <ChevronDown className="h-3.5 w-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[180px]">
+                    <DropdownMenuItem asChild>
+                      <Link
+                        to={link.href}
+                        className="flex cursor-pointer items-center px-3 py-2 text-sm font-medium text-neutral-900"
+                      >
+                        {t(`landing.nav.${link.key}All`)}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {link.children.map((child) => (
+                      <DropdownMenuItem key={child.key} asChild>
+                        <Link
+                          to={child.href}
+                          className={cn(
+                            "flex cursor-pointer items-center px-3 py-2 text-sm",
+                            location.pathname === child.href
+                              ? "font-medium text-primary-700"
+                              : "text-neutral-700",
+                          )}
+                        >
+                          {t(`landing.nav.${child.key}`)}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link
+                  key={link.key}
+                  to={link.href}
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-primary-700",
+                    location.pathname === link.href ? "text-primary-700" : "text-neutral-600",
+                  )}
+                >
+                  {t(`landing.nav.${link.key}`)}
+                </Link>
+              );
+            })}
           </div>
         </div>
 
@@ -371,21 +490,107 @@ export function LandingHeader() {
       {mobileMenuOpen && (
         <div className="border-t border-neutral-200 bg-white lg:hidden">
           <div className="space-y-1 px-4 py-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.key}
-                to={link.href}
-                className={cn(
-                  "block rounded-lg px-3 py-2 text-base font-medium transition-colors",
-                  location.pathname === link.href
-                    ? "bg-primary-50 text-primary-700"
-                    : "text-neutral-600 hover:bg-neutral-50",
-                )}
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {t(`landing.nav.${link.key}`)}
-              </Link>
-            ))}
+            {navLinks.map((link) => {
+              // Special handling for "courses" in mobile
+              if (link.key === "courses" && menuCategories && menuCategories.length > 0) {
+                return (
+                  <div key={link.key}>
+                    <button
+                      type="button"
+                      className={cn(
+                        "flex w-full items-center justify-between rounded-lg px-3 py-2 text-base font-medium transition-colors",
+                        location.pathname.startsWith("/courses")
+                          ? "bg-primary-50 text-primary-700"
+                          : "text-neutral-600 hover:bg-neutral-50",
+                      )}
+                      onClick={() => setCoursesExpanded(!coursesExpanded)}
+                    >
+                      {t(`landing.nav.${link.key}`)}
+                      <ChevronDown
+                        className={cn(
+                          "h-4 w-4 transition-transform",
+                          coursesExpanded && "rotate-180",
+                        )}
+                      />
+                    </button>
+                    {coursesExpanded && (
+                      <div className="ml-4 space-y-1 mt-1">
+                        {menuCategories.map((cat) => (
+                          <Link
+                            key={cat.id}
+                            to={`/courses/category/${cat.slug}`}
+                            className={cn(
+                              "block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                              location.pathname === `/courses/category/${cat.slug}`
+                                ? "text-primary-700"
+                                : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700",
+                            )}
+                            onClick={() => setMobileMenuOpen(false)}
+                          >
+                            {getCategoryTitle(cat.title, i18n.language)}
+                          </Link>
+                        ))}
+                        <Link
+                          to="/courses"
+                          className="block rounded-lg px-3 py-1.5 text-sm font-medium text-neutral-900 hover:bg-neutral-50"
+                          onClick={() => setMobileMenuOpen(false)}
+                        >
+                          {t("landing.nav.viewAllCourses", "View all courses")}
+                        </Link>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              return link.children ? (
+                <div key={link.key}>
+                  <Link
+                    to={link.href}
+                    className={cn(
+                      "block rounded-lg px-3 py-2 text-base font-medium transition-colors",
+                      location.pathname.startsWith(link.href)
+                        ? "bg-primary-50 text-primary-700"
+                        : "text-neutral-600 hover:bg-neutral-50",
+                    )}
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    {t(`landing.nav.${link.key}`)}
+                  </Link>
+                  <div className="ml-4 space-y-1">
+                    {link.children.map((child) => (
+                      <Link
+                        key={child.key}
+                        to={child.href}
+                        className={cn(
+                          "block rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
+                          location.pathname === child.href
+                            ? "text-primary-700"
+                            : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700",
+                        )}
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        {t(`landing.nav.${child.key}`)}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  key={link.key}
+                  to={link.href}
+                  className={cn(
+                    "block rounded-lg px-3 py-2 text-base font-medium transition-colors",
+                    location.pathname === link.href
+                      ? "bg-primary-50 text-primary-700"
+                      : "text-neutral-600 hover:bg-neutral-50",
+                  )}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  {t(`landing.nav.${link.key}`)}
+                </Link>
+              );
+            })}
             <div className="mt-4 flex flex-col gap-2 border-t border-neutral-200 pt-4">
               <div className="flex items-center justify-between px-3 py-2">
                 <span className="text-sm font-medium text-neutral-600">

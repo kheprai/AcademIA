@@ -21,6 +21,7 @@ const ensureCategory = async (db: DatabasePg, categoryId?: UUIDType | null): Pro
     .values({
       id: faker.string.uuid(),
       title: { en: categoryName, es: categoryName + " (ES)" },
+      slug: faker.helpers.slugify(categoryName).toLowerCase(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     })
@@ -93,6 +94,7 @@ export const createCourseFactory = (db: DatabasePg) => {
       stripePriceId: null,
       mercadopagoProductId: null,
       mercadopagoPriceInCents: 0,
+      isFeatured: false,
       baseLanguage: "en",
       availableLocales: ["en"],
       settings: {

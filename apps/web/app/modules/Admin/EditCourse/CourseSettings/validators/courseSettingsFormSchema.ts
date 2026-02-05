@@ -14,6 +14,7 @@ export const courseSettingsFormSchema = (t: typeof i18next.t) =>
     categoryId: z.string().min(1, t("adminCourseView.settings.validation.categoryRequired")),
     thumbnailS3Key: z.string().optional(),
     language: z.nativeEnum(SupportedLanguages),
+    isFeatured: z.boolean().optional(),
   });
 
 export type CourseSettingsFormValues = z.infer<ReturnType<typeof courseSettingsFormSchema>>;

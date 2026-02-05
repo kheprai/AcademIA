@@ -17,9 +17,13 @@ import { Textarea } from "~/components/ui/textarea";
 
 import type { CourseFormData, StepComponentProps } from "../types/scorm.types";
 
-const getCategoryTitle = (title: string | Record<string, string>, language: string): string => {
+const getCategoryTitle = (
+  title: string | Record<string, string> | object,
+  language: string,
+): string => {
   if (typeof title === "string") return title;
-  return title?.[language] || title?.en || Object.values(title || {})[0] || "";
+  const record = title as Record<string, string>;
+  return record?.[language] || record?.en || Object.values(record || {})[0] || "";
 };
 
 export function CourseDetailsStep({ handleBack, handleNext }: StepComponentProps) {

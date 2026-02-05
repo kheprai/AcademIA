@@ -34,6 +34,7 @@ export const getPaymentStatusSchema = Type.Object({
   id: Type.Number(),
   status: Type.String(),
   statusDetail: Type.Optional(Type.String()),
+  externalReference: Type.Optional(Type.String()),
   dateApproved: Type.Optional(Type.String()),
   dateCreated: Type.String(),
   paymentMethodId: Type.String(),

@@ -5,9 +5,8 @@
 
 ### Feb 2, 2026
 
-| ID   | Time    | T   | Title                                                                | Read |
-| ---- | ------- | --- | -------------------------------------------------------------------- | ---- |
-| #415 | 2:19 AM | 🔵  | Platform NewsDetails page mirrors ArticleDetails with admin controls | ~390 |
-| #413 | "       | 🔵  | Platform News page includes admin features and draft management      | ~411 |
-
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #415 | 2:19 AM | 🔵 | Platform NewsDetails page mirrors ArticleDetails with admin controls | ~390 |
+| #413 | " | 🔵 | Platform News page includes admin features and draft management | ~411 |
 </claude-mem-context>

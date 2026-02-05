@@ -82,6 +82,7 @@ export class GroupService {
                     'createdAt', u.created_at,
                     'updatedAt', u.updated_at,
                     'email', u.email,
+                    'phone', u.phone,
                     'firstName', u.first_name,
                     'lastName', u.last_name,
                     'role', u.role,

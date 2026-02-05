@@ -13,15 +13,20 @@ import {
 
 import type { GetAllCategoriesResponse } from "~/api/generated-api";
 
-const getCategoryTitle = (title: string | Record<string, string>, language: string): string => {
+const getCategoryTitle = (
+  title: string | Record<string, string> | object,
+  language: string,
+): string => {
   if (typeof title === "string") return title;
-  return title[language] || title.en || Object.values(title)[0] || "";
+  const record = title as Record<string, string>;
+  return record[language] || record.en || Object.values(record)[0] || "";
 };
 
 export type FilterState = {
   searchQuery: string;
   category: string;
   priceFilter: "all" | "free" | "paid";
+  languageFilter: string;
   sort: "relevance" | "price-asc" | "price-desc" | "newest";
 };
 
@@ -48,6 +53,7 @@ export function CoursesFilterBar({
     filters.searchQuery !== "" ||
     filters.category !== "" ||
     filters.priceFilter !== "all" ||
+    filters.languageFilter !== "" ||
     filters.sort !== "relevance";
 
   const resultsText =
@@ -86,7 +92,7 @@ export function CoursesFilterBar({
             {categories?.map((cat) => {
               const categoryTitle = getCategoryTitle(cat.title, i18n.language);
               return (
-                <SelectItem key={cat.id} value={categoryTitle}>
+                <SelectItem key={cat.id} value={cat.slug}>
                   {categoryTitle}
                 </SelectItem>
               );
@@ -108,6 +114,21 @@ export function CoursesFilterBar({
             <SelectItem value="all">{t("landing.courses.filters.allPrices")}</SelectItem>
             <SelectItem value="free">{t("landing.courses.filters.free")}</SelectItem>
             <SelectItem value="paid">{t("landing.courses.filters.paid")}</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Language Filter */}
+        <Select
+          value={filters.languageFilter || "all"}
+          onValueChange={(value) => onFilterChange("languageFilter", value === "all" ? "" : value)}
+        >
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder={t("landing.courses.filters.language")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">{t("landing.courses.filters.allLanguages")}</SelectItem>
+            <SelectItem value="es">Español</SelectItem>
+            <SelectItem value="en">English</SelectItem>
           </SelectContent>
         </Select>
 

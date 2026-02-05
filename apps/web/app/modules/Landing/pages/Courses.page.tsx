@@ -1,3 +1,4 @@
+import { useSearchParams } from "@remix-run/react";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo, useReducer } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,21 +9,32 @@ import { useCurrentUser } from "~/api/queries/useCurrentUser";
 import { studentCoursesQueryOptions } from "~/api/queries/useStudentCourses";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useLanguageStore } from "~/modules/Dashboard/Settings/Language/LanguageStore";
+import { buildMeta, getCompanyFromMatches } from "~/utils/meta-helpers";
 
 import { CoursesFilterBar, type FilterState } from "../components/CoursesFilterBar";
 import { PublicCourseCard } from "../components/PublicCourseCard";
+
+import type { MetaFunction } from "@remix-run/node";
+import type { SupportedLanguages } from "@repo/shared";
 
 type FilterAction =
   | { type: "SET_SEARCH_QUERY"; payload: string }
   | { type: "SET_CATEGORY"; payload: string }
   | { type: "SET_PRICE_FILTER"; payload: FilterState["priceFilter"] }
+  | { type: "SET_LANGUAGE_FILTER"; payload: string }
   | { type: "SET_SORT"; payload: FilterState["sort"] }
   | { type: "CLEAR_FILTERS" };
+
+export const meta: MetaFunction = ({ matches }) => {
+  const company = getCompanyFromMatches(matches);
+  return buildMeta({ title: `Cursos | ${company}` });
+};
 
 const initialFilters: FilterState = {
   searchQuery: "",
   category: "",
   priceFilter: "all",
+  languageFilter: "",
   sort: "relevance",
 };
 
@@ -34,6 +46,8 @@ function filterReducer(state: FilterState, action: FilterAction): FilterState {
       return { ...state, category: action.payload };
     case "SET_PRICE_FILTER":
       return { ...state, priceFilter: action.payload };
+    case "SET_LANGUAGE_FILTER":
+      return { ...state, languageFilter: action.payload };
     case "SET_SORT":
       return { ...state, sort: action.payload };
     case "CLEAR_FILTERS":
@@ -45,7 +59,12 @@ function filterReducer(state: FilterState, action: FilterAction): FilterState {
 
 export default function CoursesPage() {
   const { t } = useTranslation();
-  const [filters, dispatch] = useReducer(filterReducer, initialFilters);
+  const [searchParams] = useSearchParams();
+  const initialCategory = searchParams.get("category") ?? "";
+  const [filters, dispatch] = useReducer(filterReducer, {
+    ...initialFilters,
+    category: initialCategory,
+  });
   const { language } = useLanguageStore();
 
   // Fetch current user (null if not logged in)
@@ -55,9 +74,13 @@ export default function CoursesPage() {
   // Fetch categories for the filter dropdown
   const { data: categories } = useCategories({ archived: false });
 
+  // Determine display language: if filtering by language, show in that language; otherwise use web language
+  const displayLanguage = filters.languageFilter || language;
+
   // Fetch available courses with server-side filtering
   const { data: availableCourses, isLoading: isLoadingCourses } = useAvailableCourses({
-    language,
+    language: displayLanguage as SupportedLanguages,
+    ...(filters.languageFilter && { filterLanguage: filters.languageFilter as SupportedLanguages }),
     ...(filters.searchQuery && { searchQuery: filters.searchQuery }),
     ...(filters.category && { category: filters.category }),
   });
@@ -67,10 +90,16 @@ export default function CoursesPage() {
     studentCoursesQueryOptions({ language }, { enabled: isLoggedIn }),
   );
 
-  // Create a set of enrolled course IDs for quick lookup
+  // Create sets of enrolled and purchased course IDs for quick lookup
   const enrolledCourseIds = useMemo(() => {
     if (!studentCourses) return new Set<string>();
     return new Set(studentCourses.filter((c) => c.enrolled).map((c) => c.id));
+  }, [studentCourses]);
+
+  const purchasedCourseIds = useMemo(() => {
+    if (!studentCourses) return new Set<string>();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return new Set(studentCourses.filter((c) => (c as any).purchased).map((c) => c.id));
   }, [studentCourses]);
 
   // Apply client-side filtering (price) and sorting
@@ -113,6 +142,9 @@ export default function CoursesPage() {
           break;
         case "priceFilter":
           dispatch({ type: "SET_PRICE_FILTER", payload: value as FilterState["priceFilter"] });
+          break;
+        case "languageFilter":
+          dispatch({ type: "SET_LANGUAGE_FILTER", payload: value as string });
           break;
         case "sort":
           dispatch({ type: "SET_SORT", payload: value as FilterState["sort"] });
@@ -164,14 +196,19 @@ export default function CoursesPage() {
           <EmptyState />
         ) : (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredCourses.map((course) => (
-              <PublicCourseCard
-                key={course.id}
-                course={course}
-                isEnrolled={enrolledCourseIds.has(course.id)}
-                isLoggedIn={isLoggedIn}
-              />
-            ))}
+            {filteredCourses.map((course) => {
+              const courseAny = course as Record<string, unknown>;
+              return (
+                <PublicCourseCard
+                  key={course.id}
+                  course={course}
+                  isEnrolled={enrolledCourseIds.has(course.id) || !!courseAny.enrolled}
+                  isPurchased={purchasedCourseIds.has(course.id) || !!courseAny.purchased}
+                  isLoggedIn={isLoggedIn}
+                  displayLanguage={filters.languageFilter || undefined}
+                />
+              );
+            })}
           </div>
         )}
       </div>

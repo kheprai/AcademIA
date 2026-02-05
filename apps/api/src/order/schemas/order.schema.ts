@@ -1,4 +1,5 @@
 import { Type } from "@sinclair/typebox";
+
 import type { Static } from "@sinclair/typebox";
 
 export const orderItemSchema = Type.Object({
@@ -27,3 +28,17 @@ export const orderListSchema = Type.Object({
 });
 
 export const orderDetailSchema = orderSchema;
+
+export const publicOrderSchema = Type.Object({
+  id: Type.String(),
+  userId: Type.String(),
+  status: Type.String(),
+  provider: Type.String(),
+  totalAmountInCents: Type.Number(),
+  currency: Type.String(),
+  createdAt: Type.String(),
+  items: Type.Array(orderItemSchema),
+});
+
+export type PublicOrderDto = Static<typeof publicOrderSchema>;
+export const publicOrderDetailSchema = publicOrderSchema;

@@ -3,6 +3,14 @@ import { useTranslation } from "react-i18next";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
+import { buildMeta, getCompanyFromMatches } from "~/utils/meta-helpers";
+
+import type { MetaFunction } from "@remix-run/node";
+
+export const meta: MetaFunction = ({ matches }) => {
+  const company = getCompanyFromMatches(matches);
+  return buildMeta({ title: `Herramientas | ${company}` });
+};
 
 interface Tool {
   id: string;

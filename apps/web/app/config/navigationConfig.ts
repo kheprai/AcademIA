@@ -125,6 +125,11 @@ export const getNavigationConfig = (
           path: "admin/categories",
           iconName: "Category",
         },
+        {
+          label: t("navigationSideBar.registrationAttempts"),
+          path: "admin/registration-attempts",
+          iconName: "Phone",
+        },
         ...(isStripeConfigured
           ? [
               {

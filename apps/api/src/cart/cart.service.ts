@@ -6,13 +6,14 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { DatabasePg } from "src/common";
 import { FileService } from "src/file/file.service";
 import {
   cartItems,
   categories,
+  chapters,
   courses,
   courseSlugs,
   studentCourses,
@@ -48,6 +49,11 @@ export class CartService {
         mercadopagoProductId: courses.mercadopagoProductId,
         shortId: courses.shortId,
         addedAt: cartItems.createdAt,
+        hasFreeChapters: sql<boolean>`EXISTS (
+          SELECT 1 FROM ${chapters}
+          WHERE ${chapters.courseId} = ${courses.id}
+            AND ${chapters.isFreemium} = TRUE
+        )`.as("has_free_chapters"),
       })
       .from(cartItems)
       .innerJoin(courses, eq(cartItems.courseId, courses.id))
@@ -106,6 +112,7 @@ export class CartService {
           mercadopagoProductId: row.mercadopagoProductId,
           slug,
           addedAt: row.addedAt,
+          hasFreeChapters: row.hasFreeChapters,
         };
       }),
     );
@@ -132,12 +139,15 @@ export class CartService {
     }
 
     const [enrollment] = await this.db
-      .select({ id: studentCourses.id })
+      .select({
+        id: studentCourses.id,
+        purchasedAt: studentCourses.purchasedAt,
+      })
       .from(studentCourses)
       .where(and(eq(studentCourses.studentId, userId), eq(studentCourses.courseId, courseId)));
 
-    if (enrollment) {
-      throw new ConflictException("Already enrolled in this course");
+    if (enrollment?.purchasedAt) {
+      throw new ConflictException("Already purchased this course");
     }
 
     try {
@@ -184,15 +194,19 @@ export class CartService {
       return this.getCart(userId);
     }
 
-    const enrolledRows = await this.db
+    const purchasedRows = await this.db
       .select({ courseId: studentCourses.courseId })
       .from(studentCourses)
       .where(
-        and(eq(studentCourses.studentId, userId), inArray(studentCourses.courseId, validCourseIds)),
+        and(
+          eq(studentCourses.studentId, userId),
+          inArray(studentCourses.courseId, validCourseIds),
+          sql`${studentCourses.purchasedAt} IS NOT NULL`,
+        ),
       );
 
-    const enrolledIds = new Set(enrolledRows.map((r) => r.courseId));
-    const toInsert = validCourseIds.filter((id) => !enrolledIds.has(id));
+    const purchasedIds = new Set(purchasedRows.map((r) => r.courseId));
+    const toInsert = validCourseIds.filter((id) => !purchasedIds.has(id));
 
     if (toInsert.length) {
       await this.db

@@ -85,13 +85,9 @@ export const ContentAccessGuard = ({ children, type }: AccessGuardProps) => {
 
   useLayoutEffect(() => {
     if (globalSettings !== undefined && !hasAccess) {
-      if (!isLoggedIn) {
-        navigate("/auth/login");
-      } else {
-        navigate("/");
-      }
+      navigate("/");
     }
-  }, [hasAccess, navigate, globalSettings, isLoggedIn]);
+  }, [hasAccess, navigate, globalSettings]);
 
   if (globalSettings === undefined) {
     return (

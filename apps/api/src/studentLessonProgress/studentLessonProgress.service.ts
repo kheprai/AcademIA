@@ -79,7 +79,7 @@ export class StudentLessonProgressService {
 
     const [accessCourseLessonWithDetails] = await this.checkLessonAssignment(id, studentId);
 
-    if (!accessCourseLessonWithDetails.isAssigned && !accessCourseLessonWithDetails.isFreemium)
+    if (!accessCourseLessonWithDetails.isPurchased && !accessCourseLessonWithDetails.isFreemium)
       throw new UnauthorizedException("You don't have assignment to this lesson");
 
     if (
@@ -200,7 +200,7 @@ export class StudentLessonProgressService {
     }
 
     const isCompletedAsFreemium =
-      !accessCourseLessonWithDetails.isAssigned && accessCourseLessonWithDetails.isFreemium;
+      !accessCourseLessonWithDetails.isPurchased && accessCourseLessonWithDetails.isFreemium;
 
     const resolvedActor = await this.resolveActor(studentId, actor, dbInstance);
 
@@ -246,7 +246,7 @@ export class StudentLessonProgressService {
 
     if (userRole === USER_ROLES.CONTENT_CREATOR || userRole === USER_ROLES.ADMIN) return;
 
-    if (!accessCourseLessonWithDetails.isAssigned && !accessCourseLessonWithDetails.isFreemium)
+    if (!accessCourseLessonWithDetails.isPurchased && !accessCourseLessonWithDetails.isFreemium)
       throw new UnauthorizedException("You don't have assignment to this lesson");
 
     if (accessCourseLessonWithDetails.lessonIsCompleted) return;
@@ -566,6 +566,7 @@ export class StudentLessonProgressService {
     return dbInstance
       .select({
         isAssigned: sql<boolean>`CASE WHEN ${studentCourses.status} = ${COURSE_ENROLLMENT.ENROLLED} THEN TRUE ELSE FALSE END`,
+        isPurchased: sql<boolean>`CASE WHEN ${studentCourses.purchasedAt} IS NOT NULL THEN TRUE ELSE FALSE END`,
         isFreemium: sql<boolean>`CASE WHEN ${chapters.isFreemium} THEN TRUE ELSE FALSE END`,
         attempts: sql<number>`${studentLessonProgress.attempts}`,
         lessonIsCompleted: sql<boolean>`CASE WHEN ${studentLessonProgress.completedAt} IS NOT NULL THEN TRUE ELSE FALSE END`,

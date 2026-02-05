@@ -6,8 +6,7 @@ import { PlatformLogo } from "~/components/PlatformLogo";
 const footerLinks = {
   platform: [
     { href: "/courses", key: "courses" },
-    { href: "/workshops", key: "workshops" },
-    { href: "/consulting", key: "consulting" },
+    { href: "/servicios", key: "servicios" },
     { href: "/tools", key: "tools" },
     { href: "/resources", key: "resources" },
   ],

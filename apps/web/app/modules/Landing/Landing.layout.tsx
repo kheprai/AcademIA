@@ -7,7 +7,7 @@ import { LandingHeader } from "./components/LandingHeader";
 
 export default function LandingLayout() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col overflow-x-hidden">
       <LandingHeader />
       <main className="flex-1">
         <Outlet />

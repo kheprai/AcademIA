@@ -5,10 +5,59 @@ import { useTranslation } from "react-i18next";
 
 import { useArticle } from "~/api/queries/useArticle";
 import { Icon } from "~/components/Icon";
+import { JsonLd } from "~/components/JsonLd";
 import Viewer from "~/components/RichText/Viever";
 import { Button } from "~/components/ui/button";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useLanguageStore } from "~/modules/Dashboard/Settings/Language/LanguageStore";
+import {
+  buildMeta,
+  getCompanyFromMatches,
+  truncateForMeta,
+  ogImageUrl,
+} from "~/utils/meta-helpers";
+import { serverFetchSafe, resolveLanguage } from "~/utils/server-fetch.server";
+
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+
+export const loader = async ({ params, request }: LoaderFunctionArgs) => {
+  const articleId = params.articleId || "";
+  if (!articleId) return { article: null };
+
+  const language = resolveLanguage(request);
+
+  const articleRes = await serverFetchSafe<{
+    data: {
+      title: string;
+      summary: string;
+      content: string;
+      resources?: {
+        coverImage?: { fileUrl: string };
+      };
+    };
+  }>(`/api/articles/${encodeURIComponent(articleId)}?language=${language}`, request);
+
+  return { article: articleRes?.data ?? null };
+};
+
+// Skip server round-trip on client navigation; React Query handles data on the client
+export const clientLoader = () => ({ article: null });
+
+export const meta: MetaFunction<typeof loader> = ({ data, matches }) => {
+  const company = getCompanyFromMatches(matches);
+  const article = data?.article;
+
+  if (!article) {
+    return buildMeta({ title: `Recursos | ${company}` });
+  }
+
+  return buildMeta({
+    title: `${article.title} | ${company}`,
+    description: truncateForMeta(article.summary || article.content),
+    image: ogImageUrl(article.resources?.coverImage?.fileUrl),
+    type: "article",
+  });
+};
 
 export default function LandingResourceDetailPage() {
   const { t } = useTranslation();
@@ -46,6 +95,16 @@ export default function LandingResourceDetailPage() {
 
   return (
     <section className="py-12 sm:py-16">
+      <JsonLd
+        data={{
+          "@context": "https://schema.org",
+          "@type": "Article",
+          headline: article.title,
+          description: article.summary || "",
+          ...(headerImageUrl && { image: headerImageUrl }),
+          publisher: { "@type": "Organization", name: "AcademIA" },
+        }}
+      />
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         {/* Back link */}
         <Link

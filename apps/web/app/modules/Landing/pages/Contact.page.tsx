@@ -2,6 +2,14 @@ import { Link } from "@remix-run/react";
 import { useTranslation } from "react-i18next";
 
 import { Button } from "~/components/ui/button";
+import { buildMeta, getCompanyFromMatches } from "~/utils/meta-helpers";
+
+import type { MetaFunction } from "@remix-run/node";
+
+export const meta: MetaFunction = ({ matches }) => {
+  const company = getCompanyFromMatches(matches);
+  return buildMeta({ title: `Contacto | ${company}` });
+};
 
 export default function ContactPage() {
   const { t } = useTranslation();

@@ -7,6 +7,14 @@ import { useArticlesToc } from "~/api/queries";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useLanguageStore } from "~/modules/Dashboard/Settings/Language/LanguageStore";
+import { buildMeta, getCompanyFromMatches } from "~/utils/meta-helpers";
+
+import type { MetaFunction } from "@remix-run/node";
+
+export const meta: MetaFunction = ({ matches }) => {
+  const company = getCompanyFromMatches(matches);
+  return buildMeta({ title: `Recursos | ${company}` });
+};
 
 export default function LandingResourcesPage() {
   const { t } = useTranslation();

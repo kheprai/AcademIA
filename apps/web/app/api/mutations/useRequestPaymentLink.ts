@@ -10,6 +10,7 @@ type RequestPaymentLinkResult = {
   data: {
     orderId: string;
     status: string;
+    debugPaymentUrl?: string;
   };
 };
 
@@ -25,15 +26,21 @@ export function useRequestPaymentLink() {
       );
       return response.data.data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       clearCart();
+      if (data?.debugPaymentUrl) {
+        toast({
+          title: "Debug Payment Link",
+          description: data.debugPaymentUrl,
+          duration: 30000,
+        });
+      }
     },
     onError: (error) => {
       if (error instanceof AxiosError) {
         return toast({
           variant: "destructive",
-          description:
-            error.response?.data?.message ?? "Error al generar el link de pago",
+          description: error.response?.data?.message ?? "Error al generar el link de pago",
         });
       }
       toast({

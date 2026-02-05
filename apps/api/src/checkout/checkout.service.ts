@@ -6,16 +6,16 @@ import {
   Logger,
   NotFoundException,
 } from "@nestjs/common";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { CartService } from "src/cart/cart.service";
 import { DatabasePg } from "src/common";
 import { CourseService } from "src/courses/course.service";
 import { MercadoPagoService } from "src/mercadopago/mercadopago.service";
-import { orderItems, orders, payments, studentCourses, users } from "src/storage/schema";
+import { orderItems, orders, studentCourses, users } from "src/storage/schema";
 import { StripeService } from "src/stripe/stripe.service";
-import { WhatsAppService } from "src/whatsapp/whatsapp.service";
 import { isSupportedLocale } from "src/utils/isSupportedLocale";
+import { WhatsAppService } from "src/whatsapp/whatsapp.service";
 
 import type {
   FreeCheckoutBody,
@@ -44,7 +44,7 @@ export class CheckoutService {
       throw new BadRequestException("Cart is empty");
     }
 
-    await this.validateNotEnrolled(
+    await this.validateNotPurchased(
       userId,
       cartCourses.map((c) => c.courseId),
     );
@@ -112,9 +112,13 @@ export class CheckoutService {
       await this.autoEnrollFreeCourses(userId, cartCourses);
       await this.cartService.clearCart(userId);
 
-      // Send WhatsApp
+      // Send WhatsApp (skip in debug mode)
       const orderDetails = items.map((i) => i.title).join(", ");
       const total = `$${(totalAmountInCents / 100).toLocaleString("es-AR")} ARS`;
+
+      if (process.env.PHONE_DEBUG === "true") {
+        return { orderId: order.id, status: "awaiting_payment", debugPaymentUrl: paymentUrl };
+      }
 
       await this.whatsAppService.sendPaymentLink(user.phone, {
         orderDetails,
@@ -167,7 +171,7 @@ export class CheckoutService {
       await this.autoEnrollFreeCourses(userId, cartCourses);
       await this.cartService.clearCart(userId);
 
-      // Send WhatsApp
+      // Send WhatsApp (skip in debug mode)
       const titles = stripeCourses.map((c) => {
         const t = c.title;
         return typeof t === "object"
@@ -177,6 +181,10 @@ export class CheckoutService {
 
       const orderDetails = titles.join(", ");
       const total = `$${(totalAmountInCents / 100).toFixed(2)} USD`;
+
+      if (process.env.PHONE_DEBUG === "true") {
+        return { orderId: order.id, status: "awaiting_payment", debugPaymentUrl: paymentUrl };
+      }
 
       await this.whatsAppService.sendPaymentLink(user.phone, {
         orderDetails,
@@ -215,7 +223,7 @@ export class CheckoutService {
       throw new BadRequestException("Cart is empty");
     }
 
-    await this.validateNotEnrolled(
+    await this.validateNotPurchased(
       userId,
       cartCourses.map((c) => c.courseId),
     );
@@ -277,7 +285,7 @@ export class CheckoutService {
       throw new BadRequestException("Cart is empty");
     }
 
-    await this.validateNotEnrolled(
+    await this.validateNotPurchased(
       userId,
       cartCourses.map((c) => c.courseId),
     );
@@ -333,7 +341,7 @@ export class CheckoutService {
         .set({ status: "completed", providerPaymentId: String(paymentResult.id) })
         .where(eq(orders.id, order.id));
 
-      await this.enrollOrderCourses(order.id, userId);
+      await this.enrollOrderCourses(order.id, userId, { purchased: true });
     } else {
       await this.db
         .update(orders)
@@ -373,7 +381,7 @@ export class CheckoutService {
     }
 
     const freeCourseIds = freeCourses.map((c) => c.courseId);
-    await this.validateNotEnrolled(userId, freeCourseIds);
+    await this.validateNotPurchased(userId, freeCourseIds);
 
     const order = await this.createOrder({
       userId,
@@ -389,7 +397,7 @@ export class CheckoutService {
 
     await this.db.update(orders).set({ status: "completed" }).where(eq(orders.id, order.id));
 
-    await this.enrollOrderCourses(order.id, userId);
+    await this.enrollOrderCourses(order.id, userId, { purchased: true });
     await this.cartService.removeItems(userId, freeCourseIds);
 
     return { orderId: order.id, enrolledCourseIds: freeCourseIds };
@@ -412,10 +420,16 @@ export class CheckoutService {
 
     for (const course of freeCourses) {
       try {
-        await this.courseService.enrollCourse(course.courseId, userId);
+        await this.courseService.enrollCourse(
+          course.courseId,
+          userId,
+          undefined,
+          undefined,
+          undefined,
+          { purchased: true },
+        );
         this.logger.log(`Auto-enrolled user ${userId} in free course ${course.courseId}`);
       } catch (error) {
-        if (error instanceof ConflictException) continue;
         this.logger.error(`Failed to auto-enroll free course ${course.courseId}: ${error}`);
       }
     }
@@ -426,7 +440,11 @@ export class CheckoutService {
     );
   }
 
-  async enrollOrderCourses(orderId: string, userId: string): Promise<void> {
+  async enrollOrderCourses(
+    orderId: string,
+    userId: string,
+    options?: { purchased?: boolean },
+  ): Promise<void> {
     const items = await this.db
       .select({ courseId: orderItems.courseId })
       .from(orderItems)
@@ -434,12 +452,15 @@ export class CheckoutService {
 
     for (const item of items) {
       try {
-        await this.courseService.enrollCourse(item.courseId, userId);
+        await this.courseService.enrollCourse(
+          item.courseId,
+          userId,
+          undefined,
+          undefined,
+          undefined,
+          { purchased: options?.purchased ?? true },
+        );
       } catch (error) {
-        if (error instanceof ConflictException) {
-          this.logger.log(`User ${userId} already enrolled in course ${item.courseId}, skipping`);
-          continue;
-        }
         this.logger.error(`Failed to enroll user ${userId} in course ${item.courseId}: ${error}`);
       }
     }
@@ -447,17 +468,21 @@ export class CheckoutService {
     this.logger.log(`Enrolled user ${userId} in ${items.length} courses for order ${orderId}`);
   }
 
-  private async validateNotEnrolled(userId: string, courseIds: string[]): Promise<void> {
-    const enrolled = await this.db
+  private async validateNotPurchased(userId: string, courseIds: string[]): Promise<void> {
+    const purchased = await this.db
       .select({ courseId: studentCourses.courseId })
       .from(studentCourses)
       .where(
-        and(eq(studentCourses.studentId, userId), inArray(studentCourses.courseId, courseIds)),
+        and(
+          eq(studentCourses.studentId, userId),
+          inArray(studentCourses.courseId, courseIds),
+          sql`${studentCourses.purchasedAt} IS NOT NULL`,
+        ),
       );
 
-    if (enrolled.length) {
-      const enrolledIds = enrolled.map((e) => e.courseId).join(", ");
-      throw new ConflictException(`Already enrolled in courses: ${enrolledIds}`);
+    if (purchased.length) {
+      const purchasedIds = purchased.map((e) => e.courseId).join(", ");
+      throw new ConflictException(`Already purchased courses: ${purchasedIds}`);
     }
   }
 

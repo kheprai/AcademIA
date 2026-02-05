@@ -5,8 +5,7 @@
 
 ### Feb 2, 2026
 
-| ID   | Time    | T   | Title                                                                           | Read |
-| ---- | ------- | --- | ------------------------------------------------------------------------------- | ---- |
-| #422 | 2:21 AM | 🔵  | PageWrapper component provides platform-specific breadcrumbs and sidebar layout | ~349 |
-
+| ID | Time | T | Title | Read |
+|----|------|---|-------|------|
+| #422 | 2:21 AM | 🔵 | PageWrapper component provides platform-specific breadcrumbs and sidebar layout | ~349 |
 </claude-mem-context>

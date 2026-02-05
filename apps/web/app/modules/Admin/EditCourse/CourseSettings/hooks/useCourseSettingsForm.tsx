@@ -16,6 +16,7 @@ type CourseSettingsProps = {
   description?: string;
   categoryId?: string;
   thumbnailS3Key?: string;
+  isFeatured?: boolean;
   courseId: string;
   courseLanguage: SupportedLanguages;
 };
@@ -25,6 +26,7 @@ export const useCourseSettingsForm = ({
   description,
   categoryId,
   thumbnailS3Key,
+  isFeatured,
   courseId,
   courseLanguage,
 }: CourseSettingsProps) => {
@@ -39,6 +41,7 @@ export const useCourseSettingsForm = ({
       categoryId: categoryId || "",
       thumbnailS3Key: thumbnailS3Key || "",
       language: courseLanguage,
+      isFeatured: isFeatured || false,
     },
   });
 

@@ -20,6 +20,7 @@ type CourseParams = {
   excludeCourseId?: string;
   userRole?: UserRole;
   language: SupportedLanguages;
+  filterLanguage?: SupportedLanguages;
 };
 
 type QueryOptions = {
@@ -43,6 +44,7 @@ export const availableCoursesQueryOptions = (
       ...(searchParams?.userId && { userId: searchParams.userId }),
       ...(searchParams?.excludeCourseId && { excludeCourseId: searchParams.excludeCourseId }),
       language: searchParams?.language,
+      ...(searchParams?.filterLanguage && { filterLanguage: searchParams.filterLanguage }),
     });
     return response.data;
   },

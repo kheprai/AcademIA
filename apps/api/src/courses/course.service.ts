@@ -24,7 +24,6 @@ import {
   inArray,
   isNotNull,
   isNull,
-  like,
   ne,
   not,
   or,
@@ -332,6 +331,7 @@ export class CourseService {
           users.email,
           users.avatarReference,
           studentCourses.studentId,
+          studentCourses.purchasedAt,
           categories.title,
           coursesSummaryStats.freePurchasedCount,
           coursesSummaryStats.paidPurchasedCount,
@@ -536,6 +536,7 @@ export class CourseService {
       page = 1,
       filters = {},
       language,
+      filterLanguage,
     } = query;
     const { sortOrder, sortedField } = getSortOptions(sort);
 
@@ -550,9 +551,9 @@ export class CourseService {
       const conditions = [eq(courses.status, "published")];
       conditions.push(...(this.getFiltersConditions(filters) as SQL<unknown>[]));
 
-      // Filter courses by available language
-      if (language) {
-        conditions.push(sql`${language} = ANY(${courses.availableLocales})`);
+      // Filter courses by available language (only when explicitly requested)
+      if (filterLanguage) {
+        conditions.push(sql`${filterLanguage} = ANY(${courses.availableLocales})`);
       }
 
       const orderConditions = this.getOrderConditions(filters);
@@ -572,12 +573,18 @@ export class CourseService {
           authorEmail: sql<string>`${users.email}`,
           authorAvatarUrl: sql<string>`${users.avatarReference}`,
           category: this.localizationService.getFieldByLanguage(categories.title, language),
-          enrolled: sql<boolean>`FALSE`,
+          enrolled: currentUserId
+            ? sql<boolean>`CASE WHEN ${studentCourses.status} = ${COURSE_ENROLLMENT.ENROLLED} THEN TRUE ELSE FALSE END`
+            : sql<boolean>`FALSE`,
+          purchased: currentUserId
+            ? sql<boolean>`CASE WHEN ${studentCourses.purchasedAt} IS NOT NULL THEN TRUE ELSE FALSE END`
+            : sql<boolean>`FALSE`,
           enrolledParticipantCount: sql<number>`COALESCE(${coursesSummaryStats.freePurchasedCount} + ${coursesSummaryStats.paidPurchasedCount}, 0)`,
           courseChapterCount: courses.chapterCount,
           completedChapterCount: sql<number>`0`,
           priceInCents: courses.priceInCents,
           mercadopagoPriceInCents: courses.mercadopagoPriceInCents,
+          isFeatured: courses.isFeatured,
           currency: courses.currency,
           stripePriceId: courses.stripePriceId,
           mercadopagoProductId: courses.mercadopagoProductId,
@@ -630,6 +637,8 @@ export class CourseService {
           courses.availableLocales,
           courses.baseLanguage,
           groupCourses.dueDate,
+          studentCourses.status,
+          studentCourses.purchasedAt,
         )
         .orderBy(
           ...orderConditions,
@@ -644,6 +653,13 @@ export class CourseService {
         .from(courses)
         .leftJoin(categories, eq(courses.categoryId, categories.id))
         .leftJoin(users, eq(courses.authorId, users.id))
+        .leftJoin(
+          studentCourses,
+          and(
+            eq(studentCourses.courseId, courses.id),
+            currentUserId ? eq(studentCourses.studentId, currentUserId) : sql`FALSE`,
+          ),
+        )
         .where(and(...conditions));
 
       const dataWithS3SignedUrls = await Promise.all(
@@ -710,6 +726,7 @@ export class CourseService {
         courseChapterCount: courses.chapterCount,
         completedChapterCount: sql<number>`CASE WHEN ${studentCourses.status} = ${COURSE_ENROLLMENT.ENROLLED} THEN COALESCE(${studentCourses.finishedChapterCount}, 0) ELSE 0 END`,
         enrolled: sql<boolean>`CASE WHEN ${studentCourses.status} = ${COURSE_ENROLLMENT.ENROLLED} THEN TRUE ELSE FALSE END`,
+        purchased: sql<boolean>`CASE WHEN ${studentCourses.purchasedAt} IS NOT NULL THEN TRUE ELSE FALSE END`,
         status: courses.status,
         isScorm: courses.isScorm,
         priceInCents: courses.priceInCents,
@@ -747,6 +764,7 @@ export class CourseService {
       .where(eq(courses.id, id));
 
     const isEnrolled = !!course.enrolled;
+    const isPurchased = !!course.purchased;
     const NON_PUBLIC_STATUSES = ["draft", "private"];
 
     if (!course) throw new NotFoundException("Course not found");
@@ -806,7 +824,7 @@ export class CourseService {
                   ${lessons.displayOrder} AS "displayOrder",
                   ${lessons.isExternal} AS "isExternal",
                   CASE
-                    WHEN (${chapters.isFreemium} = FALSE AND ${isEnrolled} = FALSE) THEN ${
+                    WHEN (${chapters.isFreemium} = FALSE AND ${isPurchased} = FALSE) THEN ${
                       PROGRESS_STATUSES.BLOCKED
                     }
                     WHEN ${studentLessonProgress.completedAt} IS NOT NULL AND (${
@@ -958,6 +976,7 @@ export class CourseService {
         status: courses.status,
         priceInCents: courses.priceInCents,
         mercadopagoPriceInCents: courses.mercadopagoPriceInCents,
+        isFeatured: courses.isFeatured,
         currency: courses.currency,
         stripePriceId: courses.stripePriceId,
         mercadopagoProductId: courses.mercadopagoProductId,
@@ -1626,11 +1645,13 @@ export class CourseService {
     testKey?: string,
     paymentId?: string,
     currentUser?: CurrentUser,
+    options?: { purchased?: boolean },
   ) {
     const [course] = await this.db
       .select({
         id: courses.id,
         enrolled: sql<boolean>`CASE WHEN ${studentCourses.status} = ${COURSE_ENROLLMENT.ENROLLED} THEN TRUE ELSE FALSE END`,
+        purchased: sql<boolean>`CASE WHEN ${studentCourses.purchasedAt} IS NOT NULL THEN TRUE ELSE FALSE END`,
         price: courses.priceInCents,
         userDeletedAt: users.deletedAt,
       })
@@ -1648,11 +1669,23 @@ export class CourseService {
       throw new NotFoundException("User not found");
     }
 
-    if (course.enrolled) throw new ConflictException("Course is already enrolled");
+    const isPurchaseUpgrade = options?.purchased && course.enrolled && !course.purchased;
+
+    // If already enrolled and already purchased, idempotent return
+    if (course.enrolled && course.purchased) {
+      return;
+    }
+
+    // If already enrolled and not upgrading to purchased, idempotent return
+    if (course.enrolled && !isPurchaseUpgrade && !options?.purchased) {
+      return;
+    }
 
     await this.db.transaction(async (trx) => {
-      await this.createStudentCourse(id, studentId, paymentId, null);
-      await this.createCourseDependencies(id, studentId, paymentId, trx);
+      await this.createStudentCourse(id, studentId, paymentId, null, options?.purchased);
+      if (!course.enrolled) {
+        await this.createCourseDependencies(id, studentId, paymentId, trx);
+      }
     });
 
     if (currentUser) {
@@ -1714,6 +1747,7 @@ export class CourseService {
           studentId,
           courseId,
           enrolledAt: sql`NOW()`,
+          purchasedAt: sql`NOW()`,
           status: COURSE_ENROLLMENT.ENROLLED,
           enrolledByGroupId: null,
         };
@@ -1724,7 +1758,11 @@ export class CourseService {
         .values(studentCoursesValues)
         .onConflictDoUpdate({
           target: [studentCourses.studentId, studentCourses.courseId],
-          set: { enrolledAt: sql`EXCLUDED.enrolled_at`, status: sql`EXCLUDED.status` },
+          set: {
+            enrolledAt: sql`EXCLUDED.enrolled_at`,
+            status: sql`EXCLUDED.status`,
+            purchasedAt: sql`COALESCE(${studentCourses.purchasedAt}, NOW())`,
+          },
         });
 
       await Promise.all(
@@ -1831,6 +1869,7 @@ export class CourseService {
               studentId,
               courseId,
               enrolledByGroupId: groupId,
+              purchasedAt: sql`NOW()`,
               status: COURSE_ENROLLMENT.ENROLLED,
             })),
           )
@@ -1840,6 +1879,7 @@ export class CourseService {
               enrolledAt: sql`EXCLUDED.enrolled_at`,
               status: sql`EXCLUDED.status`,
               enrolledByGroupId: sql`EXCLUDED.enrolled_by_group_id`,
+              purchasedAt: sql`COALESCE(${studentCourses.purchasedAt}, NOW())`,
             },
           })
           .returning({ studentId: studentCourses.studentId });
@@ -1956,6 +1996,7 @@ export class CourseService {
     studentId: UUIDType,
     paymentId: string | null = null,
     enrolledByGroupId: UUIDType | null = null,
+    purchased: boolean = false,
   ): Promise<StudentCourseSelect> {
     const [enrolledCourse] = await this.db
       .insert(studentCourses)
@@ -1964,12 +2005,19 @@ export class CourseService {
         courseId,
         paymentId,
         enrolledAt: sql`NOW()`,
+        purchasedAt: purchased ? sql`NOW()` : null,
         status: COURSE_ENROLLMENT.ENROLLED,
         enrolledByGroupId,
       })
       .onConflictDoUpdate({
         target: [studentCourses.studentId, studentCourses.courseId],
-        set: { enrolledAt: sql`EXCLUDED.enrolled_at`, status: sql`EXCLUDED.status` },
+        set: {
+          enrolledAt: sql`COALESCE(${studentCourses.enrolledAt}, EXCLUDED.enrolled_at)`,
+          status: sql`EXCLUDED.status`,
+          purchasedAt: purchased
+            ? sql`COALESCE(${studentCourses.purchasedAt}, NOW())`
+            : sql`${studentCourses.purchasedAt}`,
+        },
       })
       .returning();
 
@@ -2393,6 +2441,7 @@ export class CourseService {
       authorAvatarUrl: sql<string>`${users.avatarReference}`,
       category: this.localizationService.getFieldByLanguage(categories.title, language),
       enrolled: sql<boolean>`CASE WHEN ${studentCourses.studentId} IS NOT NULL THEN TRUE ELSE FALSE END`,
+      purchased: sql<boolean>`CASE WHEN ${studentCourses.purchasedAt} IS NOT NULL THEN TRUE ELSE FALSE END`,
       enrolledParticipantCount: sql<number>`COALESCE(${coursesSummaryStats.freePurchasedCount} + ${coursesSummaryStats.paidPurchasedCount}, 0)`,
       courseChapterCount: courses.chapterCount,
       completedChapterCount: sql<number>`COALESCE(${studentCourses.finishedChapterCount}, 0)`,
@@ -2458,7 +2507,7 @@ export class CourseService {
     }
 
     if (filters.category) {
-      conditions.push(like(categories.title, `%${filters.category}%`));
+      conditions.push(eq(categories.slug, filters.category));
     }
     if (filters.author) {
       const authorNameConcat = sql`CONCAT(${users.firstName}, ' ' , ${users.lastName})`;
@@ -2526,6 +2575,7 @@ export class CourseService {
         SELECT DISTINCT ${studentCourses.courseId}
         FROM ${studentCourses}
         WHERE ${studentCourses.studentId} = ${currentUserId}
+          AND ${studentCourses.purchasedAt} IS NOT NULL
       )
     `);
 

@@ -10,13 +10,14 @@ import { useSendOTP } from "~/api/mutations/useSendOTP";
 import { useVerifyOTP } from "~/api/mutations/useVerifyOTP";
 import { useGlobalSettingsSuspense } from "~/api/queries/useGlobalSettings";
 import { useSSOEnabled } from "~/api/queries/useSSOEnabled";
-import { OTPInput } from "~/components/ui/OTPInput";
 import { PlatformLogo } from "~/components/PlatformLogo";
+import { TermsCheckbox } from "~/components/TermsCheckbox";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { FormValidationError } from "~/components/ui/form-validation-error";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { OTPInput } from "~/components/ui/OTPInput";
 import { useToast } from "~/components/ui/use-toast";
 import { cn } from "~/lib/utils";
 import { setPageTitle } from "~/utils/setPageTitle";
@@ -34,8 +35,12 @@ const registerFormSchema = (t: (key: string, fallback?: string) => string) =>
     phone: z.string().regex(/^\+[1-9]\d{6,14}$/, {
       message: t("registerView.validation.phone", "Ingresa un numero valido con codigo de pais"),
     }),
-    firstName: z.string().min(1, { message: t("registerView.validation.firstName", "Ingresa tu nombre") }),
-    lastName: z.string().min(1, { message: t("registerView.validation.lastName", "Ingresa tu apellido") }),
+    firstName: z
+      .string()
+      .min(1, { message: t("registerView.validation.firstName", "Ingresa tu nombre") }),
+    lastName: z
+      .string()
+      .min(1, { message: t("registerView.validation.lastName", "Ingresa tu apellido") }),
   });
 
 type RegisterFormData = z.infer<ReturnType<typeof registerFormSchema>>;
@@ -53,6 +58,7 @@ export default function RegisterPage() {
   const [step, setStep] = useState<Step>("form");
   const [otpToken, setOtpToken] = useState(prefilledOtpToken);
   const [resendTimer, setResendTimer] = useState(0);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const { mutateAsync: sendOTP, isPending: isSendingOTP } = useSendOTP();
   const { mutateAsync: verifyOTP, isPending: isVerifying } = useVerifyOTP();
@@ -70,11 +76,7 @@ export default function RegisterPage() {
     (ssoEnabled?.data.slack ?? import.meta.env.VITE_SLACK_OAUTH_ENABLED) === "true";
 
   const {
-    data: {
-      enforceSSO: isSSOEnforced,
-      inviteOnlyRegistration,
-      loginBackgroundImageS3Key,
-    },
+    data: { enforceSSO: isSSOEnforced, inviteOnlyRegistration, loginBackgroundImageS3Key },
   } = useGlobalSettingsSuspense();
 
   const isAnyProviderEnabled = useMemo(
@@ -130,13 +132,13 @@ export default function RegisterPage() {
     if (!phone) return;
 
     try {
-      await sendOTP(phone);
+      await sendOTP({ phone, context: "register", source: "register", termsAccepted });
       setStep("otp");
       setResendTimer(60);
     } catch {
       // Error handled by mutation
     }
-  }, [getValues, sendOTP]);
+  }, [getValues, sendOTP, termsAccepted]);
 
   const handleVerifyOTP = useCallback(
     async (code: string) => {
@@ -185,12 +187,12 @@ export default function RegisterPage() {
     if (resendTimer > 0) return;
     const phone = getValues("phone");
     try {
-      await sendOTP(phone);
+      await sendOTP({ phone, context: "register", source: "register", termsAccepted });
       setResendTimer(60);
     } catch {
       // Error handled by mutation
     }
-  }, [getValues, sendOTP, resendTimer]);
+  }, [getValues, sendOTP, resendTimer, termsAccepted]);
 
   return (
     <>
@@ -225,7 +227,12 @@ export default function RegisterPage() {
                 <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="firstName">{t("registerView.field.firstName")}</Label>
-                    <Input id="firstName" type="text" placeholder="Juan" {...register("firstName")} />
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="Juan"
+                      {...register("firstName")}
+                    />
                     {errors.firstName?.message && (
                       <FormValidationError message={errors.firstName.message} />
                     )}
@@ -233,16 +240,19 @@ export default function RegisterPage() {
 
                   <div className="grid gap-2">
                     <Label htmlFor="lastName">{t("registerView.field.lastName")}</Label>
-                    <Input id="lastName" type="text" placeholder="Perez" {...register("lastName")} />
+                    <Input
+                      id="lastName"
+                      type="text"
+                      placeholder="Perez"
+                      {...register("lastName")}
+                    />
                     {errors.lastName?.message && (
                       <FormValidationError message={errors.lastName.message} />
                     )}
                   </div>
 
                   <div className="grid gap-2">
-                    <Label htmlFor="phone">
-                      {t("registerView.field.phone", "Telefono")}
-                    </Label>
+                    <Label htmlFor="phone">{t("registerView.field.phone", "Telefono")}</Label>
                     <Input
                       id="phone"
                       type="tel"
@@ -254,10 +264,12 @@ export default function RegisterPage() {
                     )}
                   </div>
 
+                  <TermsCheckbox checked={termsAccepted} onCheckedChange={setTermsAccepted} />
+
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={!isValid || isSendingOTP || isRegistering}
+                    disabled={!isValid || !termsAccepted || isSendingOTP || isRegistering}
                   >
                     {isSendingOTP || isRegistering
                       ? t("registerView.button.creating", "Creando cuenta...")
@@ -274,10 +286,7 @@ export default function RegisterPage() {
                     {t("registerView.otpSentTo", "Enviamos un codigo a")}{" "}
                     <strong>{getValues("phone")}</strong>
                   </p>
-                  <OTPInput
-                    onComplete={handleVerifyOTP}
-                    disabled={isVerifying || isRegistering}
-                  />
+                  <OTPInput onComplete={handleVerifyOTP} disabled={isVerifying || isRegistering} />
                   {(isVerifying || isRegistering) && (
                     <p className="text-center text-sm text-neutral-500">
                       {t("registerView.verifying", "Verificando...")}
@@ -301,7 +310,9 @@ export default function RegisterPage() {
                       )}
                     >
                       {resendTimer > 0
-                        ? t("registerView.button.resendIn", "Reenviar en {{seconds}}s", { seconds: resendTimer })
+                        ? t("registerView.button.resendIn", "Reenviar en {{seconds}}s", {
+                            seconds: resendTimer,
+                          })
                         : t("registerView.button.resendCode", "Reenviar codigo")}
                     </button>
                   </div>

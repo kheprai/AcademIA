@@ -85,7 +85,7 @@ export class LessonService {
 
     if (!lesson) throw new NotFoundException("Lesson not found");
 
-    if (isStudent && !lesson.isFreemium && !lesson.isEnrolled)
+    if (isStudent && !lesson.isFreemium && !lesson.isPurchased)
       throw new UnauthorizedException("You don't have access");
 
     if (
@@ -270,7 +270,7 @@ export class LessonService {
       throw new ConflictException("You have already answered this quiz");
     }
 
-    if (!accessCourseLessonWithDetails.isAssigned && !accessCourseLessonWithDetails.isFreemium)
+    if (!accessCourseLessonWithDetails.isPurchased && !accessCourseLessonWithDetails.isFreemium)
       throw new UnauthorizedException("You don't have assignment to this lesson");
 
     const quizSettings = await this.lessonRepository.getLessonSettings(studentQuizAnswers.lessonId);
@@ -374,7 +374,7 @@ export class LessonService {
       throw new ConflictException("You have not answered this quiz yet");
     }
 
-    if (!accessCourseLessonWithDetails.isAssigned) {
+    if (!accessCourseLessonWithDetails.isPurchased && !accessCourseLessonWithDetails.isFreemium) {
       throw new ConflictException("You are not enrolled to this course");
     }
 
@@ -439,7 +439,7 @@ export class LessonService {
       userId,
     );
 
-    if (!lesson.isAssigned && isStudent && !lesson.isFreemium) {
+    if (!lesson.isPurchased && isStudent && !lesson.isFreemium) {
       throw new ForbiddenException("You are not allowed to access this lesson!");
     }
 

@@ -1,29 +1,19 @@
-import { Link } from "@remix-run/react";
-import { useTranslation } from "react-i18next";
+import { buildMeta, getCompanyFromMatches } from "~/utils/meta-helpers";
 
-import { Button } from "~/components/ui/button";
+import { ServicePage } from "../components/ServicePage";
 
-export default function WorkshopsPage() {
-  const { t } = useTranslation();
+import type { MetaFunction } from "@remix-run/node";
 
+export const meta: MetaFunction = ({ matches }) => {
+  const company = getCompanyFromMatches(matches);
+  return buildMeta({ title: `Talleres | ${company}` });
+};
+
+export default function TalleresPage() {
   return (
-    <section className="py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-neutral-900 sm:text-5xl">
-            {t("landing.workshops.title")}
-          </h1>
-          <p className="mt-6 text-lg text-neutral-600">{t("landing.workshops.description")}</p>
-          <div className="mt-10 flex justify-center gap-4">
-            <Button asChild>
-              <Link to="/courses">{t("landing.hero.viewCourses")}</Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/contact">{t("landing.placeholder.contactUs")}</Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    </section>
+    <ServicePage
+      sectionKey="talleres"
+      features={[{ key: "handson" }, { key: "small" }, { key: "materials" }]}
+    />
   );
 }

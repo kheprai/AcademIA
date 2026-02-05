@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import useAllQA from "~/api/queries/useAllQA";
+import { JsonLd } from "~/components/JsonLd";
 import {
   Accordion,
   AccordionContent,
@@ -14,6 +15,27 @@ import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useLanguageStore } from "~/modules/Dashboard/Settings/Language/LanguageStore";
+import { buildMeta, getCompanyFromMatches, truncateForMeta } from "~/utils/meta-helpers";
+import { serverFetchSafe, resolveLanguage } from "~/utils/server-fetch.server";
+
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const language = resolveLanguage(request);
+  const qaRes = await serverFetchSafe<{
+    data: { id: string; question: string; answer: string }[];
+  }>(`/api/qa?language=${language}`, request);
+
+  return { qaItems: qaRes?.data ?? [] };
+};
+
+// Skip server round-trip on client navigation; React Query handles data on the client
+export const clientLoader = () => ({ qaItems: [] });
+
+export const meta: MetaFunction<typeof loader> = ({ matches }) => {
+  const company = getCompanyFromMatches(matches);
+  return buildMeta({ title: `Preguntas Frecuentes | ${company}` });
+};
 
 export default function LandingFAQPage() {
   const { t } = useTranslation();
@@ -41,6 +63,22 @@ export default function LandingFAQPage() {
 
   return (
     <section className="py-12 sm:py-16 lg:py-20">
+      {filteredQA.length > 0 && !searchQuery.trim() && (
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: filteredQA.slice(0, 30).map((item) => ({
+              "@type": "Question",
+              name: item.title || "",
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: truncateForMeta(item.description, 500),
+              },
+            })),
+          }}
+        />
+      )}
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         {/* Hero Section */}
         <div className="mb-12 text-center">

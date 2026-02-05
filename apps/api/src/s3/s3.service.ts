@@ -210,4 +210,23 @@ export class S3Service {
     const response = await this.s3Client.send(command);
     return response.Body as Readable;
   }
+
+  async getFileStreamWithMetadata(key: string) {
+    const command = new GetObjectCommand({
+      Bucket: this.bucketName,
+      Key: key,
+    });
+
+    const response = await this.s3Client.send(command);
+    return {
+      stream: response.Body as Readable,
+      contentType: response.ContentType || "application/octet-stream",
+      contentLength: response.ContentLength,
+    };
+  }
+
+  isLocalEndpoint(): boolean {
+    const config = this.loadS3Config();
+    return config.endpoint.includes("localhost") || config.endpoint.includes("127.0.0.1");
+  }
 }

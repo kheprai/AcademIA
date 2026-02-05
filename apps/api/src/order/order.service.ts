@@ -5,7 +5,7 @@ import { DatabasePg } from "src/common";
 import { FileService } from "src/file/file.service";
 import { courses, orderItems, orders } from "src/storage/schema";
 
-import type { OrderDto } from "./schemas/order.schema";
+import type { OrderDto, PublicOrderDto } from "./schemas/order.schema";
 
 @Injectable()
 export class OrderService {
@@ -53,6 +53,27 @@ export class OrderService {
 
     return {
       id: order.id,
+      status: order.status,
+      provider: order.provider,
+      totalAmountInCents: order.totalAmountInCents,
+      currency: order.currency,
+      createdAt: order.createdAt,
+      items,
+    };
+  }
+
+  async getOrderPublic(orderId: string): Promise<PublicOrderDto> {
+    const [order] = await this.db.select().from(orders).where(eq(orders.id, orderId));
+
+    if (!order) {
+      throw new NotFoundException("Order not found");
+    }
+
+    const items = await this.getOrderItems(orderId);
+
+    return {
+      id: order.id,
+      userId: order.userId,
       status: order.status,
       provider: order.provider,
       totalAmountInCents: order.totalAmountInCents,

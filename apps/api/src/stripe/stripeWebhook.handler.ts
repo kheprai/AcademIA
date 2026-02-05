@@ -1,5 +1,5 @@
 import { StripeWebhookHandler as StripeWebhookHandlerDecorator } from "@golevelup/nestjs-stripe";
-import { ConflictException, Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { and, eq, isNull } from "drizzle-orm";
 import Stripe from "stripe";
 
@@ -99,15 +99,16 @@ export class StripeWebhookHandler {
 
     for (const item of items) {
       try {
-        await this.courseService.enrollCourse(item.courseId, userId);
-      } catch (error) {
-        if (error instanceof ConflictException) {
-          this.logger.log(`User ${userId} already enrolled in course ${item.courseId}, skipping`);
-          continue;
-        }
-        this.logger.error(
-          `Failed to enroll user ${userId} in course ${item.courseId}: ${error}`,
+        await this.courseService.enrollCourse(
+          item.courseId,
+          userId,
+          undefined,
+          undefined,
+          undefined,
+          { purchased: true },
         );
+      } catch (error) {
+        this.logger.error(`Failed to enroll user ${userId} in course ${item.courseId}: ${error}`);
       }
     }
 

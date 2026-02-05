@@ -8,8 +8,6 @@ import {
   useRouteError,
 } from "@remix-run/react";
 
-import { version } from "~/../version.json";
-
 import { PlatformFavicon } from "./components/PlatformFavicon";
 import { Toaster } from "./components/ui/toaster";
 import { useNavigationTracker } from "./hooks/useNavigationTracker";
@@ -25,19 +23,25 @@ export const links: LinksFunction = () => {
     { rel: "icon", href: "/app-signet.svg", type: "image/svg+xml" },
     { rel: "shortcut icon", href: "/app-signet.svg", type: "image/svg+xml" },
     { rel: "apple-touch-icon", href: "/app-signet.svg" },
+    {
+      rel: "alternate",
+      type: "text/plain",
+      href: "/llms.txt",
+      title: "LLM-friendly content index",
+    },
     { rel: "stylesheet", href: css },
   ];
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="scroll-smooth">
-      <head>
+    <html lang="en" className="scroll-smooth" suppressHydrationWarning>
+      <head suppressHydrationWarning>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta name="generator" content={`AcademIA ${version}`} />
         <Meta />
         <Links />
+        <meta name="ai-content-available" content="structured-data, llms-txt" />
       </head>
       <body>
         {children}

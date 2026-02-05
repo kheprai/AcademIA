@@ -100,6 +100,7 @@ export const coursesValidation = {
     { type: "query" as const, name: "sort", schema: sortCourseFieldsOptions },
     { type: "query" as const, name: "excludeCourseId", schema: UUIDSchema },
     { type: "query" as const, name: "language", schema: supportedLanguagesSchema },
+    { type: "query" as const, name: "filterLanguage", schema: supportedLanguagesSchema },
   ],
 };
 

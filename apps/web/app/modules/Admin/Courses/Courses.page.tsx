@@ -67,12 +67,13 @@ import type { CourseParams, CourseStatus } from "~/api/queries/useCourses";
 type TCourse = GetAllCoursesResponse["data"][number];
 
 const getCategoryTitle = (
-  category: string | Record<string, string> | null | undefined,
+  category: string | Record<string, string> | object | null | undefined,
   language: string,
 ): string => {
   if (!category) return "";
   if (typeof category === "string") return category;
-  return category[language] || category.en || Object.values(category)[0] || "";
+  const record = category as Record<string, string>;
+  return record[language] || record.en || Object.values(record)[0] || "";
 };
 
 export const meta: MetaFunction = ({ matches }) => setPageTitle(matches, "pages.courses");

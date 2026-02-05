@@ -57,8 +57,13 @@ export class AuthController {
   })
   async sendOTP(
     @Body() data: SendOtpBody,
-  ): Promise<BaseResponse<{ message: string; debugCode?: string }>> {
-    const result = await this.authService.sendOTP(data.phone);
+  ): Promise<BaseResponse<{ message: string; debugCode?: string; debugUserNotFound?: string }>> {
+    const { phone, context, source, cartSnapshot, termsAccepted } = data;
+    const result = await this.authService.sendOTP(phone, context, {
+      source,
+      cartSnapshot,
+      termsAccepted,
+    });
     return new BaseResponse(result);
   }
 

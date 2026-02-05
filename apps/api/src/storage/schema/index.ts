@@ -104,6 +104,15 @@ export const categories = pgTable("categories", {
   ...timestamps,
   title: jsonb("title").notNull().$type<Record<string, string>>(),
   archived,
+  slug: text("slug").notNull().unique(),
+  showInMenu: boolean("show_in_menu").notNull().default(false),
+  displayOrder: integer("display_order"),
+  heroImageS3Key: text("hero_image_s3_key"),
+  heroTitle: jsonb("hero_title").$type<Record<string, string>>(),
+  heroSubtitle: jsonb("hero_subtitle").$type<Record<string, string>>(),
+  heroCtaText: jsonb("hero_cta_text").$type<Record<string, string>>(),
+  heroCtaUrl: text("hero_cta_url"),
+  heroOverlayColor: text("hero_overlay_color"),
 });
 
 export const createTokens = pgTable("create_tokens", {
@@ -159,6 +168,7 @@ export const courses = pgTable(
     stripePriceId: text("stripe_price_id"),
     mercadopagoProductId: text("mercadopago_product_id"),
     mercadopagoPriceInCents: integer("mercadopago_price_in_cents").notNull().default(0),
+    isFeatured: boolean("is_featured").notNull().default(false),
     settings: coursesSettings.column.notNull(),
     baseLanguage: text("base_language").notNull().default("en"),
     availableLocales: text("available_locales")
@@ -336,6 +346,11 @@ export const studentCourses = pgTable(
     }).defaultNow(),
     status: varchar("status").notNull().default("enrolled"), // enrolled/not_enrolled
     paymentId: varchar("payment_id", { length: 50 }),
+    purchasedAt: timestamp("purchased_at", {
+      mode: "string",
+      withTimezone: true,
+      precision: 3,
+    }),
     enrolledByGroupId: uuid("enrolled_by_group_id").references(() => groups.id),
   },
   (table) => ({
@@ -936,5 +951,29 @@ export const payments = pgTable(
     providerIdx: index("payments_provider_idx").on(table.provider),
     statusIdx: index("payments_status_idx").on(table.status),
     createdAtIdx: index("payments_created_at_idx").on(table.createdAt),
+  }),
+);
+
+export const registrationAttempts = pgTable(
+  "registration_attempts",
+  {
+    ...id,
+    ...timestamps,
+    phone: text("phone").notNull(),
+    source: text("source").notNull(),
+    cartSnapshot: jsonb("cart_snapshot"),
+    termsAccepted: boolean("terms_accepted").notNull().default(false),
+    registered: boolean("registered").notNull().default(false),
+    registeredAt: timestamp("registered_at", { withTimezone: true, precision: 3 }),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    firstName: text("first_name"),
+    lastName: text("last_name"),
+    totalPriceUsdCents: integer("total_price_usd_cents"),
+    totalPriceArsCents: integer("total_price_ars_cents"),
+  },
+  (table) => ({
+    phoneIdx: index("reg_attempts_phone_idx").on(table.phone),
+    registeredIdx: index("reg_attempts_registered_idx").on(table.registered),
+    createdAtIdx: index("reg_attempts_created_at_idx").on(table.createdAt),
   }),
 );

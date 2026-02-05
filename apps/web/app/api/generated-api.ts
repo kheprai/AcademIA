@@ -9,9 +9,69 @@
  * ---------------------------------------------------------------
  */
 
+export interface SendOTPBody {
+  /** @pattern ^\+[1-9]\d{6,14}$ */
+  phone: string;
+  context?: "login" | "register";
+  source?: "register" | "checkout";
+  cartSnapshot?: {
+    courseId: string;
+    title: string;
+    priceInCents: number;
+    mercadopagoPriceInCents?: number;
+    currency: string;
+  }[];
+  termsAccepted?: boolean;
+}
+
+export interface VerifyOTPBody {
+  /** @pattern ^\+[1-9]\d{6,14}$ */
+  phone: string;
+  /**
+   * @minLength 6
+   * @maxLength 6
+   */
+  code: string;
+}
+
+export interface VerifyOTPResponse {
+  data:
+    | {
+        id: string;
+        createdAt: string;
+        updatedAt: string;
+        email: string | null;
+        phone: string | null;
+        firstName: string;
+        lastName: string;
+        role: string;
+        archived: boolean;
+        deletedAt: string | null;
+        profilePictureUrl: string | null;
+        isNewUser: false;
+        onboardingStatus: {
+          id: string;
+          createdAt: string;
+          updatedAt: string;
+          userId: string;
+          dashboard: boolean;
+          courses: boolean;
+          announcements: boolean;
+          profile: boolean;
+          settings: boolean;
+          providerInformation: boolean;
+        };
+      }
+    | {
+        verified: true;
+        isNewUser: true;
+        otpToken: string;
+      };
+}
+
 export interface RegisterBody {
-  /** @format email */
-  email: string;
+  /** @pattern ^\+[1-9]\d{6,14}$ */
+  phone: string;
   /**
    * @minLength 1
    * @maxLength 64
@@ -22,8 +82,7 @@ export interface RegisterBody {
    * @maxLength 64
    */
   lastName: string;
-  password: string;
-  language: "en" | "es";
+  otpToken: string;
 }
 
 export interface RegisterResponse {
@@ -31,52 +90,14 @@ export interface RegisterResponse {
     id: string;
     createdAt: string;
     updatedAt: string;
-    email: string;
+    email: string | null;
+    phone: string | null;
     firstName: string;
     lastName: string;
     role: string;
     archived: boolean;
     deletedAt: string | null;
     profilePictureUrl: string | null;
-  };
-}
-
-export interface LoginBody {
-  /** @format email */
-  email: string;
-  /**
-   * @minLength 8
-   * @maxLength 64
-   */
-  password: string;
-  rememberMe?: boolean;
-}
-
-export interface LoginResponse {
-  data: {
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    archived: boolean;
-    deletedAt: string | null;
-    profilePictureUrl: string | null;
-    shouldVerifyMFA: boolean;
-    onboardingStatus: {
-      id: string;
-      createdAt: string;
-      updatedAt: string;
-      userId: string;
-      dashboard: boolean;
-      courses: boolean;
-      announcements: boolean;
-      profile: boolean;
-      settings: boolean;
-      providerInformation: boolean;
-    };
   };
 }
 
@@ -89,14 +110,14 @@ export interface CurrentUserResponse {
     id: string;
     createdAt: string;
     updatedAt: string;
-    email: string;
+    email: string | null;
+    phone: string | null;
     firstName: string;
     lastName: string;
     role: string;
     archived: boolean;
     deletedAt: string | null;
     profilePictureUrl: string | null;
-    shouldVerifyMFA: boolean;
     onboardingStatus: {
       id: string;
       createdAt: string;
@@ -112,41 +133,381 @@ export interface CurrentUserResponse {
   };
 }
 
-export interface ForgotPasswordBody {
-  /**
-   * @format email
-   * @minLength 1
-   */
-  email: string;
-}
-
-export interface CreatePasswordBody {
-  password: string;
-  /** @minLength 1 */
-  createToken: string;
-  language: string;
-}
-
-export interface ResetPasswordBody {
-  newPassword: string;
-  /** @minLength 1 */
-  resetToken: string;
-}
-
-export interface MFASetupResponse {
+export interface GetUserStatisticsResponse {
   data: {
-    secret: string;
-    otpauth: string;
+    averageStats: {
+      lessonStats: {
+        started: number;
+        completed: number;
+        completionRate: number;
+      };
+      courseStats: {
+        started: number;
+        completed: number;
+        completionRate: number;
+      };
+    };
+    quizzes: {
+      totalAttempts: number;
+      totalCorrectAnswers: number;
+      totalWrongAnswers: number;
+      totalQuestions: number;
+      averageScore: number;
+      uniqueQuizzesTaken: number;
+    };
+    courses: object;
+    lessons: object;
+    streak: {
+      current: number;
+      longest: number;
+      activityHistory: object;
+    };
+    nextLesson: {
+      /** @format uuid */
+      courseId: string;
+      courseTitle: string;
+      courseDescription: string;
+      courseThumbnail: string;
+      /** @format uuid */
+      lessonId: string;
+      chapterTitle: string;
+      chapterProgress: "not_started" | "in_progress" | "completed" | "blocked";
+      completedLessonCount: number;
+      lessonCount: number;
+      chapterDisplayOrder: number;
+    } | null;
   };
 }
 
-export interface MFAVerifyBody {
-  token: string;
+export interface GetStatsResponse {
+  data: {
+    totalAttempts: number;
+    totalRegistered: number;
+    conversionRate: number;
+    bySource: {
+      source: string;
+      count: number;
+    }[];
+    daily: {
+      date: string;
+      attempts: number;
+      registered: number;
+    }[];
+  };
 }
 
-export interface MFAVerifyResponse {
+export interface FileUploadResponse {
+  fileKey: string;
+  fileUrl?: string;
+  status?: string;
+  uploadId?: string;
+}
+
+export interface InitVideoUploadBody {
+  /** @minLength 1 */
+  filename: string;
+  /** @min 1 */
+  sizeBytes: number;
+  /** @minLength 1 */
+  mimeType: string;
+  title?: string;
+  resource?: string;
+  /** @format uuid */
+  contextId?: string;
+  /** @format uuid */
+  entityId?: string;
+  entityType:
+    | "course"
+    | "chapter"
+    | "lesson"
+    | "question"
+    | "news"
+    | "articles"
+    | "user"
+    | "category"
+    | "announcement"
+    | "global_settings";
+}
+
+export interface InitVideoUploadResponse {
+  /** @format uuid */
+  uploadId: string;
+  provider: "bunny" | "s3";
+  fileKey: string;
+  bunnyGuid?: string;
+  tusEndpoint?: string;
+  tusHeaders?: object;
+  expiresAt?: string;
+  multipartUploadId?: string;
+  /** @min 1 */
+  partSize?: number;
+  /** @format uuid */
+  resourceId?: string;
+}
+
+export type GetVideoUploadStatusResponse = {
+  uploadId: string;
+  placeholderKey: string;
+  status: "queued" | "uploaded" | "processed" | "failed";
+  provider?: "bunny" | "s3";
+  fileKey?: string;
+  fileUrl?: string;
+  bunnyVideoId?: string;
+  multipartUploadId?: string;
+  /** @min 1 */
+  partSize?: number;
+  fileType?: string;
+  error?: string;
+  userId?: string;
+} | null;
+
+export interface HandleBunnyWebhookBody {
+  status?: number | string;
+  Status?: number | string;
+  videoId?: string;
+  VideoId?: string;
+  videoGuid?: string;
+  VideoGuid?: string;
+  guid?: string;
+  Guid?: string;
+}
+
+export interface GetUsersResponse {
+  data: ({
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    email: string | null;
+    phone: string | null;
+    firstName: string;
+    lastName: string;
+    role: string;
+    archived: boolean;
+    deletedAt: string | null;
+    profilePictureUrl: string | null;
+  } & {
+    groups: {
+      /** @format uuid */
+      id: string;
+      name: string;
+    }[];
+  })[];
+  pagination: {
+    totalItems: number;
+    page: number;
+    perPage: number;
+  };
+  appliedFilters?: object;
+}
+
+export interface GetUserByIdResponse {
   data: {
-    isValid: boolean;
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    email: string | null;
+    phone: string | null;
+    firstName: string;
+    lastName: string;
+    role: string;
+    archived: boolean;
+    deletedAt: string | null;
+    profilePictureUrl: string | null;
+    groups: {
+      /** @format uuid */
+      id: string;
+      name: string;
+    }[];
+  };
+}
+
+export interface GetUserDetailsResponse {
+  data: {
+    firstName: string | null;
+    lastName: string | null;
+    /** @format uuid */
+    id: string;
+    description: string | null;
+    contactEmail: string | null;
+    contactPhone: string | null;
+    jobTitle: string | null;
+    role: "admin" | "student" | "content_creator";
+    profilePictureUrl: string | null;
+  };
+}
+
+export interface UpdateUserBody {
+  firstName?: string;
+  lastName?: string;
+  groups?: string[] | null;
+  /** @format email */
+  email?: string;
+  role?: "admin" | "student" | "content_creator";
+  archived?: boolean;
+}
+
+export interface UpdateUserResponse {
+  data: {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    email: string | null;
+    phone: string | null;
+    firstName: string;
+    lastName: string;
+    role: string;
+    archived: boolean;
+    deletedAt: string | null;
+    profilePictureUrl: string | null;
+  };
+}
+
+export interface UpsertUserDetailsBody {
+  description?: string;
+  /** @format email */
+  contactEmail?: string;
+  contactPhoneNumber?: string;
+  jobTitle?: string;
+}
+
+export interface UpsertUserDetailsResponse {
+  data: {
+    /** @format uuid */
+    id: string;
+    message: string;
+  };
+}
+
+export interface AdminUpdateUserBody {
+  firstName?: string;
+  lastName?: string;
+  groups?: string[] | null;
+  /** @format email */
+  email?: string;
+  role?: "admin" | "student" | "content_creator";
+  archived?: boolean;
+}
+
+export interface AdminUpdateUserResponse {
+  data: {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    email: string | null;
+    phone: string | null;
+    firstName: string;
+    lastName: string;
+    role: string;
+    archived: boolean;
+    deletedAt: string | null;
+    profilePictureUrl: string | null;
+  };
+}
+
+export interface ChangePasswordBody {
+  newPassword: string;
+  /**
+   * @minLength 8
+   * @maxLength 64
+   */
+  oldPassword: string;
+}
+
+export type ChangePasswordResponse = null;
+
+export interface DeleteBulkUsersBody {
+  userIds: string[];
+}
+
+export type DeleteBulkUsersResponse = null;
+
+export type BulkAssignUsersToGroupBody = {
+  /** @format uuid */
+  userId: string;
+  groups: string[];
+}[];
+
+export interface ArchiveBulkUsersBody {
+  userIds: string[];
+}
+
+export interface ArchiveBulkUsersResponse {
+  data: {
+    archivedUsersCount: number;
+    usersAlreadyArchivedCount: number;
+  };
+}
+
+export interface BulkUpdateUsersRolesBody {
+  userIds: string[];
+  role: "admin" | "student" | "content_creator";
+}
+
+export interface CreateUserBody {
+  /** @format email */
+  email: string;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  firstName: string;
+  /**
+   * @minLength 1
+   * @maxLength 64
+   */
+  lastName: string;
+  role: "admin" | "student" | "content_creator";
+  language?: string;
+}
+
+export interface CreateUserResponse {
+  data: {
+    /** @format uuid */
+    id: string;
+    message: string;
+  };
+}
+
+export interface ImportUsersResponse {
+  data: {
+    importedUsersAmount: number;
+    skippedUsersAmount: number;
+    importedUsersList: string[];
+    skippedUsersList: {
+      /** @format email */
+      email: string;
+      reason: string;
+    }[];
+  };
+}
+
+export interface ResetOnboardingStatusResponse {
+  data: {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    userId: string;
+    dashboard: boolean;
+    courses: boolean;
+    announcements: boolean;
+    profile: boolean;
+    settings: boolean;
+    providerInformation: boolean;
+  };
+}
+
+export interface MarkOnboardingCompleteResponse {
+  data: {
+    id: string;
+    createdAt: string;
+    updatedAt: string;
+    userId: string;
+    dashboard: boolean;
+    courses: boolean;
+    announcements: boolean;
+    profile: boolean;
+    settings: boolean;
+    providerInformation: boolean;
   };
 }
 
@@ -503,388 +864,6 @@ export interface GetLoginPageFilesResponse {
   }[];
 }
 
-export interface FileUploadResponse {
-  fileKey: string;
-  fileUrl?: string;
-  status?: string;
-  uploadId?: string;
-}
-
-export interface InitVideoUploadBody {
-  /** @minLength 1 */
-  filename: string;
-  /** @min 1 */
-  sizeBytes: number;
-  /** @minLength 1 */
-  mimeType: string;
-  title?: string;
-  resource?: string;
-  /** @format uuid */
-  contextId?: string;
-  /** @format uuid */
-  entityId?: string;
-  entityType:
-    | "course"
-    | "chapter"
-    | "lesson"
-    | "question"
-    | "news"
-    | "articles"
-    | "user"
-    | "category"
-    | "announcement"
-    | "global_settings";
-}
-
-export interface InitVideoUploadResponse {
-  /** @format uuid */
-  uploadId: string;
-  provider: "bunny" | "s3";
-  fileKey: string;
-  bunnyGuid?: string;
-  tusEndpoint?: string;
-  tusHeaders?: object;
-  expiresAt?: string;
-  multipartUploadId?: string;
-  /** @min 1 */
-  partSize?: number;
-  /** @format uuid */
-  resourceId?: string;
-}
-
-export type GetVideoUploadStatusResponse = {
-  uploadId: string;
-  placeholderKey: string;
-  status: "queued" | "uploaded" | "processed" | "failed";
-  provider?: "bunny" | "s3";
-  fileKey?: string;
-  fileUrl?: string;
-  bunnyVideoId?: string;
-  multipartUploadId?: string;
-  /** @min 1 */
-  partSize?: number;
-  fileType?: string;
-  error?: string;
-  userId?: string;
-} | null;
-
-export interface HandleBunnyWebhookBody {
-  status?: number | string;
-  Status?: number | string;
-  videoId?: string;
-  VideoId?: string;
-  videoGuid?: string;
-  VideoGuid?: string;
-  guid?: string;
-  Guid?: string;
-}
-
-export interface GetUserStatisticsResponse {
-  data: {
-    averageStats: {
-      lessonStats: {
-        started: number;
-        completed: number;
-        completionRate: number;
-      };
-      courseStats: {
-        started: number;
-        completed: number;
-        completionRate: number;
-      };
-    };
-    quizzes: {
-      totalAttempts: number;
-      totalCorrectAnswers: number;
-      totalWrongAnswers: number;
-      totalQuestions: number;
-      averageScore: number;
-      uniqueQuizzesTaken: number;
-    };
-    courses: object;
-    lessons: object;
-    streak: {
-      current: number;
-      longest: number;
-      activityHistory: object;
-    };
-    nextLesson: {
-      /** @format uuid */
-      courseId: string;
-      courseTitle: string;
-      courseDescription: string;
-      courseThumbnail: string;
-      /** @format uuid */
-      lessonId: string;
-      chapterTitle: string;
-      chapterProgress: "not_started" | "in_progress" | "completed" | "blocked";
-      completedLessonCount: number;
-      lessonCount: number;
-      chapterDisplayOrder: number;
-    } | null;
-  };
-}
-
-export interface GetStatsResponse {
-  data: {
-    fiveMostPopularCourses: {
-      courseName: string;
-      studentCount: number;
-    }[];
-    totalCoursesCompletionStats: {
-      completionPercentage: number;
-      totalCoursesCompletion: number;
-      totalCourses: number;
-    };
-    conversionAfterFreemiumLesson: {
-      conversionPercentage: number;
-      purchasedCourses: number;
-      remainedOnFreemium: number;
-    };
-    courseStudentsStats: object;
-    avgQuizScore: {
-      correctAnswerCount: number;
-      wrongAnswerCount: number;
-      answerCount: number;
-    };
-  };
-}
-
-export interface GetUsersResponse {
-  data: ({
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    archived: boolean;
-    deletedAt: string | null;
-    profilePictureUrl: string | null;
-  } & {
-    groups: {
-      /** @format uuid */
-      id: string;
-      name: string;
-    }[];
-  })[];
-  pagination: {
-    totalItems: number;
-    page: number;
-    perPage: number;
-  };
-  appliedFilters?: object;
-}
-
-export interface GetUserByIdResponse {
-  data: {
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    archived: boolean;
-    deletedAt: string | null;
-    profilePictureUrl: string | null;
-    groups: {
-      /** @format uuid */
-      id: string;
-      name: string;
-    }[];
-  };
-}
-
-export interface GetUserDetailsResponse {
-  data: {
-    firstName: string | null;
-    lastName: string | null;
-    /** @format uuid */
-    id: string;
-    description: string | null;
-    contactEmail: string | null;
-    contactPhone: string | null;
-    jobTitle: string | null;
-    role: "admin" | "student" | "content_creator";
-    profilePictureUrl: string | null;
-  };
-}
-
-export interface UpdateUserBody {
-  firstName?: string;
-  lastName?: string;
-  groups?: string[] | null;
-  /** @format email */
-  email?: string;
-  role?: "admin" | "student" | "content_creator";
-  archived?: boolean;
-}
-
-export interface UpdateUserResponse {
-  data: {
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    archived: boolean;
-    deletedAt: string | null;
-    profilePictureUrl: string | null;
-  };
-}
-
-export interface UpsertUserDetailsBody {
-  description?: string;
-  /** @format email */
-  contactEmail?: string;
-  contactPhoneNumber?: string;
-  jobTitle?: string;
-}
-
-export interface UpsertUserDetailsResponse {
-  data: {
-    /** @format uuid */
-    id: string;
-    message: string;
-  };
-}
-
-export interface AdminUpdateUserBody {
-  firstName?: string;
-  lastName?: string;
-  groups?: string[] | null;
-  /** @format email */
-  email?: string;
-  role?: "admin" | "student" | "content_creator";
-  archived?: boolean;
-}
-
-export interface AdminUpdateUserResponse {
-  data: {
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    archived: boolean;
-    deletedAt: string | null;
-    profilePictureUrl: string | null;
-  };
-}
-
-export interface ChangePasswordBody {
-  newPassword: string;
-  /**
-   * @minLength 8
-   * @maxLength 64
-   */
-  oldPassword: string;
-}
-
-export type ChangePasswordResponse = null;
-
-export interface DeleteBulkUsersBody {
-  userIds: string[];
-}
-
-export type DeleteBulkUsersResponse = null;
-
-export type BulkAssignUsersToGroupBody = {
-  /** @format uuid */
-  userId: string;
-  groups: string[];
-}[];
-
-export interface ArchiveBulkUsersBody {
-  userIds: string[];
-}
-
-export interface ArchiveBulkUsersResponse {
-  data: {
-    archivedUsersCount: number;
-    usersAlreadyArchivedCount: number;
-  };
-}
-
-export interface BulkUpdateUsersRolesBody {
-  userIds: string[];
-  role: "admin" | "student" | "content_creator";
-}
-
-export interface CreateUserBody {
-  /** @format email */
-  email: string;
-  /**
-   * @minLength 1
-   * @maxLength 64
-   */
-  firstName: string;
-  /**
-   * @minLength 1
-   * @maxLength 64
-   */
-  lastName: string;
-  role: "admin" | "student" | "content_creator";
-  language?: string;
-}
-
-export interface CreateUserResponse {
-  data: {
-    /** @format uuid */
-    id: string;
-    message: string;
-  };
-}
-
-export interface ImportUsersResponse {
-  data: {
-    importedUsersAmount: number;
-    skippedUsersAmount: number;
-    importedUsersList: string[];
-    skippedUsersList: {
-      /** @format email */
-      email: string;
-      reason: string;
-    }[];
-  };
-}
-
-export interface ResetOnboardingStatusResponse {
-  data: {
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    userId: string;
-    dashboard: boolean;
-    courses: boolean;
-    announcements: boolean;
-    profile: boolean;
-    settings: boolean;
-    providerInformation: boolean;
-  };
-}
-
-export interface MarkOnboardingCompleteResponse {
-  data: {
-    id: string;
-    createdAt: string;
-    updatedAt: string;
-    userId: string;
-    dashboard: boolean;
-    courses: boolean;
-    announcements: boolean;
-    profile: boolean;
-    settings: boolean;
-    providerInformation: boolean;
-  };
-}
-
 export interface GetAllGroupsResponse {
   data: {
     /** @format uuid */
@@ -895,7 +874,8 @@ export interface GetAllGroupsResponse {
       id: string;
       createdAt: string;
       updatedAt: string;
-      email: string;
+      email: string | null;
+      phone: string | null;
       firstName: string;
       lastName: string;
       role: string;
@@ -924,7 +904,8 @@ export interface GetGroupByIdResponse {
       id: string;
       createdAt: string;
       updatedAt: string;
-      email: string;
+      email: string | null;
+      phone: string | null;
       firstName: string;
       lastName: string;
       role: string;
@@ -947,7 +928,8 @@ export interface GetUserGroupsResponse {
       id: string;
       createdAt: string;
       updatedAt: string;
-      email: string;
+      email: string | null;
+      phone: string | null;
       firstName: string;
       lastName: string;
       role: string;
@@ -1095,6 +1077,7 @@ export interface GetStudentCoursesResponse {
     slug: string;
     availableLocales: string[];
     baseLanguage: string;
+    isFeatured?: boolean;
   }[];
   pagination: {
     totalItems: number;
@@ -1157,6 +1140,7 @@ export interface GetAvailableCoursesResponse {
     slug: string;
     availableLocales: string[];
     baseLanguage: string;
+    isFeatured?: boolean;
   }[];
   pagination: {
     totalItems: number;
@@ -1196,6 +1180,7 @@ export interface GetContentCreatorCoursesResponse {
     slug: string;
     availableLocales: string[];
     baseLanguage: string;
+    isFeatured?: boolean;
   }[];
 }
 
@@ -1254,6 +1239,7 @@ export interface GetCourseResponse {
     isScorm?: boolean;
     priceInCents: number;
     mercadopagoPriceInCents: number;
+    isFeatured?: boolean;
     thumbnailUrl?: string;
     title: string;
     slug: string;
@@ -1368,6 +1354,7 @@ export interface GetBetaCourseByIdResponse {
     isScorm?: boolean;
     priceInCents: number;
     mercadopagoPriceInCents: number;
+    isFeatured?: boolean;
     thumbnailUrl?: string;
     thumbnailS3Key?: string;
     thumbnailS3SingedUrl?: string | null;
@@ -1423,6 +1410,7 @@ export interface UpdateCourseBody {
   archived?: boolean;
   /** @default "en" */
   language?: "en" | "es";
+  isFeatured?: boolean;
 }
 
 export interface UpdateCourseResponse {
@@ -2783,6 +2771,16 @@ export interface GetAllCategoriesResponse {
     title: string | object;
     archived: boolean | null;
     createdAt: string | null;
+    slug: string;
+    showInMenu?: boolean;
+    displayOrder?: number | null;
+    heroImageS3Key?: string | null;
+    heroImageUrl?: string | null;
+    heroTitle?: object | null;
+    heroSubtitle?: object | null;
+    heroCtaText?: object | null;
+    heroCtaUrl?: string | null;
+    heroOverlayColor?: string | null;
   }[];
   pagination: {
     totalItems: number;
@@ -2792,6 +2790,31 @@ export interface GetAllCategoriesResponse {
   appliedFilters?: object;
 }
 
+export interface GetMenuCategoriesResponse {
+  data: {
+    /** @format uuid */
+    id: string;
+    title: string | object;
+    slug: string;
+    displayOrder: number | null;
+  }[];
+}
+
+export interface GetCategoryPageResponse {
+  data: {
+    /** @format uuid */
+    id: string;
+    title: string | object;
+    slug: string;
+    heroImageUrl: string | null;
+    heroTitle: object | null;
+    heroSubtitle: object | null;
+    heroCtaText: object | null;
+    heroCtaUrl: string | null;
+    heroOverlayColor: string | null;
+  };
+}
+
 export interface GetCategoryByIdResponse {
   data: {
     /** @format uuid */
@@ -2799,11 +2822,22 @@ export interface GetCategoryByIdResponse {
     title: string | object;
     archived: boolean | null;
     createdAt: string | null;
+    slug: string;
+    showInMenu?: boolean;
+    displayOrder?: number | null;
+    heroImageS3Key?: string | null;
+    heroImageUrl?: string | null;
+    heroTitle?: object | null;
+    heroSubtitle?: object | null;
+    heroCtaText?: object | null;
+    heroCtaUrl?: string | null;
+    heroOverlayColor?: string | null;
   };
 }
 
 export interface CreateCategoryBody {
   title: object;
+  slug?: string;
 }
 
 export interface CreateCategoryResponse {
@@ -2819,6 +2853,15 @@ export interface UpdateCategoryBody {
   id?: string;
   title?: object;
   archived?: boolean;
+  slug?: string;
+  showInMenu?: boolean;
+  displayOrder?: number | null;
+  heroImageS3Key?: string | null;
+  heroTitle?: object | null;
+  heroSubtitle?: object | null;
+  heroCtaText?: object | null;
+  heroCtaUrl?: string | null;
+  heroOverlayColor?: string | null;
 }
 
 export interface UpdateCategoryResponse {
@@ -2828,6 +2871,16 @@ export interface UpdateCategoryResponse {
     title: string | object;
     archived: boolean | null;
     createdAt: string | null;
+    slug: string;
+    showInMenu?: boolean;
+    displayOrder?: number | null;
+    heroImageS3Key?: string | null;
+    heroImageUrl?: string | null;
+    heroTitle?: object | null;
+    heroSubtitle?: object | null;
+    heroCtaText?: object | null;
+    heroCtaUrl?: string | null;
+    heroOverlayColor?: string | null;
   };
 }
 
@@ -3080,6 +3133,29 @@ export interface MergeGuestCartResponse {
       addedAt: string;
     }[];
     itemCount: number;
+  };
+}
+
+export interface RequestPaymentLinkBody {
+  method: "stripe" | "mercadopago";
+}
+
+export interface RequestPaymentLinkResponse {
+  data: {
+    orderId: string;
+    status: string;
+    debugPaymentUrl?: string;
+  };
+}
+
+export interface GetOrderStatusResponse {
+  data: {
+    orderId: string;
+    status: string;
+    provider: string;
+    totalAmountInCents: number;
+    currency: string;
+    createdAt: string;
   };
 }
 
@@ -3897,6 +3973,31 @@ export interface GenerateArticlePreviewResponse {
   };
 }
 
+export interface GetAllResponse {
+  data: {
+    id: string;
+    phone: string;
+    source: string;
+    cartSnapshot?: any;
+    termsAccepted: boolean;
+    registered: boolean;
+    registeredAt?: string | null;
+    userId?: string | null;
+    firstName?: string | null;
+    lastName?: string | null;
+    totalPriceUsdCents?: number | null;
+    totalPriceArsCents?: number | null;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+  pagination: {
+    totalItems: number;
+    page: number;
+    perPage: number;
+  };
+  appliedFilters?: object;
+}
+
 import type {
   AxiosInstance,
   AxiosRequestConfig,
@@ -4061,12 +4162,27 @@ export class API<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name AuthControllerRegister
-     * @request POST:/api/auth/register
+     * @name AuthControllerSendOtp
+     * @request POST:/api/auth/send-otp
      */
-    authControllerRegister: (data: RegisterBody, params: RequestParams = {}) =>
-      this.request<RegisterResponse, any>({
-        path: `/api/auth/register`,
+    authControllerSendOtp: (data: SendOTPBody, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/auth/send-otp`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name AuthControllerVerifyOtp
+     * @request POST:/api/auth/verify-otp
+     */
+    authControllerVerifyOtp: (data: VerifyOTPBody, params: RequestParams = {}) =>
+      this.request<VerifyOTPResponse, any>({
+        path: `/api/auth/verify-otp`,
         method: "POST",
         body: data,
         type: ContentType.Json,
@@ -4077,12 +4193,12 @@ export class API<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name AuthControllerLogin
-     * @request POST:/api/auth/login
+     * @name AuthControllerRegister
+     * @request POST:/api/auth/register
      */
-    authControllerLogin: (data: LoginBody, params: RequestParams = {}) =>
-      this.request<LoginResponse, any>({
-        path: `/api/auth/login`,
+    authControllerRegister: (data: RegisterBody, params: RequestParams = {}) =>
+      this.request<RegisterResponse, any>({
+        path: `/api/auth/register`,
         method: "POST",
         body: data,
         type: ContentType.Json,
@@ -4129,51 +4245,6 @@ export class API<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         path: `/api/auth/current-user`,
         method: "GET",
         format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name AuthControllerForgotPassword
-     * @request POST:/api/auth/forgot-password
-     */
-    authControllerForgotPassword: (data: ForgotPasswordBody, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/auth/forgot-password`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name AuthControllerCreatePassword
-     * @request POST:/api/auth/create-password
-     */
-    authControllerCreatePassword: (data: CreatePasswordBody, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/auth/create-password`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name AuthControllerResetPassword
-     * @request POST:/api/auth/reset-password
-     */
-    authControllerResetPassword: (data: ResetPasswordBody, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/auth/reset-password`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
         ...params,
       }),
 
@@ -4258,13 +4329,20 @@ export class API<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name AuthControllerMfaSetup
-     * @request POST:/api/auth/mfa/setup
+     * @name StatisticsControllerGetUserStatistics
+     * @request GET:/api/statistics/user-stats
      */
-    authControllerMfaSetup: (params: RequestParams = {}) =>
-      this.request<MFASetupResponse, any>({
-        path: `/api/auth/mfa/setup`,
-        method: "POST",
+    statisticsControllerGetUserStatistics: (
+      query?: {
+        /** @default "en" */
+        language?: "en" | "es";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GetUserStatisticsResponse, any>({
+        path: `/api/statistics/user-stats`,
+        method: "GET",
+        query: query,
         format: "json",
         ...params,
       }),
@@ -4272,15 +4350,500 @@ export class API<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name AuthControllerMfaVerify
-     * @request POST:/api/auth/mfa/verify
+     * @name StatisticsControllerGetStats
+     * @request GET:/api/statistics/stats
      */
-    authControllerMfaVerify: (data: MFAVerifyBody, params: RequestParams = {}) =>
-      this.request<MFAVerifyResponse, any>({
-        path: `/api/auth/mfa/verify`,
+    statisticsControllerGetStats: (
+      query?: {
+        /** @default "en" */
+        language?: "en" | "es";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GetStatsResponse, any>({
+        path: `/api/statistics/stats`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name FileControllerUploadFile
+     * @request POST:/api/file
+     */
+    fileControllerUploadFile: (
+      data: {
+        /** @format binary */
+        file?: File;
+        /** Optional resource type */
+        resource?: string;
+        /** Optional lesson ID for existing lessons */
+        lessonId?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<FileUploadResponse, any>({
+        path: `/api/file`,
+        method: "POST",
+        body: data,
+        type: ContentType.FormData,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name FileControllerDeleteFile
+     * @request DELETE:/api/file
+     */
+    fileControllerDeleteFile: (
+      query: {
+        /** Key of the file to delete */
+        fileKey: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/file`,
+        method: "DELETE",
+        query: query,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name FileControllerInitVideoUpload
+     * @request POST:/api/file/videos/init
+     */
+    fileControllerInitVideoUpload: (data: InitVideoUploadBody, params: RequestParams = {}) =>
+      this.request<InitVideoUploadResponse, any>({
+        path: `/api/file/videos/init`,
         method: "POST",
         body: data,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name FileControllerTusOptionsBase
+     * @request OPTIONS:/api/file/videos/tus
+     */
+    fileControllerTusOptionsBase: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/file/videos/tus`,
+        method: "OPTIONS",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name FileControllerCreateTusUpload
+     * @request POST:/api/file/videos/tus
+     */
+    fileControllerCreateTusUpload: (params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/file/videos/tus`,
+        method: "POST",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name FileControllerTusOptionsUpload
+     * @request OPTIONS:/api/file/videos/tus/{id}
+     */
+    fileControllerTusOptionsUpload: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/file/videos/tus/${id}`,
+        method: "OPTIONS",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name FileControllerGetTusUpload
+     * @request HEAD:/api/file/videos/tus/{id}
+     */
+    fileControllerGetTusUpload: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/file/videos/tus/${id}`,
+        method: "HEAD",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name FileControllerPatchTusUpload
+     * @request PATCH:/api/file/videos/tus/{id}
+     */
+    fileControllerPatchTusUpload: (id: string, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/file/videos/tus/${id}`,
+        method: "PATCH",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name FileControllerGetVideoUploadStatus
+     * @request GET:/api/file/videos/{id}
+     */
+    fileControllerGetVideoUploadStatus: (id: string, params: RequestParams = {}) =>
+      this.request<GetVideoUploadStatusResponse, any>({
+        path: `/api/file/videos/${id}`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name FileControllerHandleBunnyWebhook
+     * @request POST:/api/file/bunny/webhook
+     */
+    fileControllerHandleBunnyWebhook: (data: HandleBunnyWebhookBody, params: RequestParams = {}) =>
+      this.request<void, any>({
+        path: `/api/file/bunny/webhook`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerGetUsers
+     * @request GET:/api/user/all
+     */
+    userControllerGetUsers: (
+      query?: {
+        keyword?: string;
+        role?: "admin" | "student" | "content_creator";
+        archived?: string;
+        /** @min 1 */
+        page?: number;
+        perPage?: number;
+        sort?:
+          | "firstName"
+          | "lastName"
+          | "email"
+          | "createdAt"
+          | "groupName"
+          | "-firstName"
+          | "-lastName"
+          | "-email"
+          | "-createdAt"
+          | "-groupName";
+        groups?: string[];
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GetUsersResponse, any>({
+        path: `/api/user/all`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerGetUserById
+     * @request GET:/api/user
+     */
+    userControllerGetUserById: (
+      query: {
+        /** @format uuid */
+        id: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GetUserByIdResponse, any>({
+        path: `/api/user`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerUpdateUser
+     * @request PATCH:/api/user
+     */
+    userControllerUpdateUser: (
+      query: {
+        /** @format uuid */
+        id: string;
+      },
+      data: UpdateUserBody,
+      params: RequestParams = {},
+    ) =>
+      this.request<UpdateUserResponse, any>({
+        path: `/api/user`,
+        method: "PATCH",
+        query: query,
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerDeleteBulkUsers
+     * @request DELETE:/api/user
+     */
+    userControllerDeleteBulkUsers: (data: DeleteBulkUsersBody, params: RequestParams = {}) =>
+      this.request<DeleteBulkUsersResponse, any>({
+        path: `/api/user`,
+        method: "DELETE",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerCreateUser
+     * @request POST:/api/user
+     */
+    userControllerCreateUser: (data: CreateUserBody, params: RequestParams = {}) =>
+      this.request<CreateUserResponse, any>({
+        path: `/api/user`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerGetUserDetails
+     * @request GET:/api/user/details
+     */
+    userControllerGetUserDetails: (
+      query: {
+        /** @format uuid */
+        userId: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GetUserDetailsResponse, any>({
+        path: `/api/user/details`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerUpsertUserDetails
+     * @request PATCH:/api/user/details
+     */
+    userControllerUpsertUserDetails: (data: UpsertUserDetailsBody, params: RequestParams = {}) =>
+      this.request<UpsertUserDetailsResponse, any>({
+        path: `/api/user/details`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerUpdateUserProfile
+     * @request PATCH:/api/user/profile
+     */
+    userControllerUpdateUserProfile: (
+      data: {
+        /** @format binary */
+        userAvatar?: File;
+        /** @format string */
+        data?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/user/profile`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.FormData,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerAdminUpdateUser
+     * @request PATCH:/api/user/admin
+     */
+    userControllerAdminUpdateUser: (
+      query: {
+        /** @format uuid */
+        id: string;
+      },
+      data: AdminUpdateUserBody,
+      params: RequestParams = {},
+    ) =>
+      this.request<AdminUpdateUserResponse, any>({
+        path: `/api/user/admin`,
+        method: "PATCH",
+        query: query,
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerChangePassword
+     * @request PATCH:/api/user/change-password
+     */
+    userControllerChangePassword: (
+      query: {
+        /** @format uuid */
+        id: string;
+      },
+      data: ChangePasswordBody,
+      params: RequestParams = {},
+    ) =>
+      this.request<ChangePasswordResponse, any>({
+        path: `/api/user/change-password`,
+        method: "PATCH",
+        query: query,
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerBulkAssignUsersToGroup
+     * @request PATCH:/api/user/bulk/groups
+     */
+    userControllerBulkAssignUsersToGroup: (
+      data: BulkAssignUsersToGroupBody,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/user/bulk/groups`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerArchiveBulkUsers
+     * @request PATCH:/api/user/bulk/archive
+     */
+    userControllerArchiveBulkUsers: (data: ArchiveBulkUsersBody, params: RequestParams = {}) =>
+      this.request<ArchiveBulkUsersResponse, any>({
+        path: `/api/user/bulk/archive`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerBulkUpdateUsersRoles
+     * @request PATCH:/api/user/bulk/roles
+     */
+    userControllerBulkUpdateUsersRoles: (
+      data: BulkUpdateUsersRolesBody,
+      params: RequestParams = {},
+    ) =>
+      this.request<void, any>({
+        path: `/api/user/bulk/roles`,
+        method: "PATCH",
+        body: data,
+        type: ContentType.Json,
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerImportUsers
+     * @request POST:/api/user/import
+     */
+    userControllerImportUsers: (
+      data: {
+        /** @format binary */
+        usersFile?: File;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<ImportUsersResponse, any>({
+        path: `/api/user/import`,
+        method: "POST",
+        body: data,
+        type: ContentType.FormData,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerResetOnboardingStatus
+     * @request PATCH:/api/user/onboarding-status/reset
+     */
+    userControllerResetOnboardingStatus: (params: RequestParams = {}) =>
+      this.request<ResetOnboardingStatusResponse, any>({
+        path: `/api/user/onboarding-status/reset`,
+        method: "PATCH",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name UserControllerMarkOnboardingComplete
+     * @request PATCH:/api/user/onboarding-status/{page}
+     */
+    userControllerMarkOnboardingComplete: (page: string, params: RequestParams = {}) =>
+      this.request<MarkOnboardingCompleteResponse, any>({
+        path: `/api/user/onboarding-status/${page}`,
+        method: "PATCH",
         format: "json",
         ...params,
       }),
@@ -4779,528 +5342,6 @@ export class API<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
-     * @name FileControllerUploadFile
-     * @request POST:/api/file
-     */
-    fileControllerUploadFile: (
-      data: {
-        /** @format binary */
-        file?: File;
-        /** Optional resource type */
-        resource?: string;
-        /** Optional lesson ID for existing lessons */
-        lessonId?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<FileUploadResponse, any>({
-        path: `/api/file`,
-        method: "POST",
-        body: data,
-        type: ContentType.FormData,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name FileControllerDeleteFile
-     * @request DELETE:/api/file
-     */
-    fileControllerDeleteFile: (
-      query: {
-        /** Key of the file to delete */
-        fileKey: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/api/file`,
-        method: "DELETE",
-        query: query,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name FileControllerInitVideoUpload
-     * @request POST:/api/file/videos/init
-     */
-    fileControllerInitVideoUpload: (data: InitVideoUploadBody, params: RequestParams = {}) =>
-      this.request<InitVideoUploadResponse, any>({
-        path: `/api/file/videos/init`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name FileControllerTusOptionsBase
-     * @request OPTIONS:/api/file/videos/tus
-     */
-    fileControllerTusOptionsBase: (params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/file/videos/tus`,
-        method: "OPTIONS",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name FileControllerCreateTusUpload
-     * @request POST:/api/file/videos/tus
-     */
-    fileControllerCreateTusUpload: (params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/file/videos/tus`,
-        method: "POST",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name FileControllerTusOptionsUpload
-     * @request OPTIONS:/api/file/videos/tus/{id}
-     */
-    fileControllerTusOptionsUpload: (id: string, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/file/videos/tus/${id}`,
-        method: "OPTIONS",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name FileControllerGetTusUpload
-     * @request HEAD:/api/file/videos/tus/{id}
-     */
-    fileControllerGetTusUpload: (id: string, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/file/videos/tus/${id}`,
-        method: "HEAD",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name FileControllerPatchTusUpload
-     * @request PATCH:/api/file/videos/tus/{id}
-     */
-    fileControllerPatchTusUpload: (id: string, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/file/videos/tus/${id}`,
-        method: "PATCH",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name FileControllerGetVideoUploadStatus
-     * @request GET:/api/file/videos/{id}
-     */
-    fileControllerGetVideoUploadStatus: (id: string, params: RequestParams = {}) =>
-      this.request<GetVideoUploadStatusResponse, any>({
-        path: `/api/file/videos/${id}`,
-        method: "GET",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name FileControllerHandleBunnyWebhook
-     * @request POST:/api/file/bunny/webhook
-     */
-    fileControllerHandleBunnyWebhook: (data: HandleBunnyWebhookBody, params: RequestParams = {}) =>
-      this.request<void, any>({
-        path: `/api/file/bunny/webhook`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name StatisticsControllerGetUserStatistics
-     * @request GET:/api/statistics/user-stats
-     */
-    statisticsControllerGetUserStatistics: (
-      query?: {
-        /** @default "en" */
-        language?: "en" | "es";
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<GetUserStatisticsResponse, any>({
-        path: `/api/statistics/user-stats`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name StatisticsControllerGetStats
-     * @request GET:/api/statistics/stats
-     */
-    statisticsControllerGetStats: (
-      query?: {
-        /** @default "en" */
-        language?: "en" | "es";
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<GetStatsResponse, any>({
-        path: `/api/statistics/stats`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerGetUsers
-     * @request GET:/api/user/all
-     */
-    userControllerGetUsers: (
-      query?: {
-        keyword?: string;
-        role?: "admin" | "student" | "content_creator";
-        archived?: string;
-        /** @min 1 */
-        page?: number;
-        perPage?: number;
-        sort?:
-          | "firstName"
-          | "lastName"
-          | "email"
-          | "createdAt"
-          | "groupName"
-          | "-firstName"
-          | "-lastName"
-          | "-email"
-          | "-createdAt"
-          | "-groupName";
-        groups?: string[];
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<GetUsersResponse, any>({
-        path: `/api/user/all`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerGetUserById
-     * @request GET:/api/user
-     */
-    userControllerGetUserById: (
-      query: {
-        /** @format uuid */
-        id: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<GetUserByIdResponse, any>({
-        path: `/api/user`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerUpdateUser
-     * @request PATCH:/api/user
-     */
-    userControllerUpdateUser: (
-      query: {
-        /** @format uuid */
-        id: string;
-      },
-      data: UpdateUserBody,
-      params: RequestParams = {},
-    ) =>
-      this.request<UpdateUserResponse, any>({
-        path: `/api/user`,
-        method: "PATCH",
-        query: query,
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerDeleteBulkUsers
-     * @request DELETE:/api/user
-     */
-    userControllerDeleteBulkUsers: (data: DeleteBulkUsersBody, params: RequestParams = {}) =>
-      this.request<DeleteBulkUsersResponse, any>({
-        path: `/api/user`,
-        method: "DELETE",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerCreateUser
-     * @request POST:/api/user
-     */
-    userControllerCreateUser: (data: CreateUserBody, params: RequestParams = {}) =>
-      this.request<CreateUserResponse, any>({
-        path: `/api/user`,
-        method: "POST",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerGetUserDetails
-     * @request GET:/api/user/details
-     */
-    userControllerGetUserDetails: (
-      query: {
-        /** @format uuid */
-        userId: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<GetUserDetailsResponse, any>({
-        path: `/api/user/details`,
-        method: "GET",
-        query: query,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerUpsertUserDetails
-     * @request PATCH:/api/user/details
-     */
-    userControllerUpsertUserDetails: (data: UpsertUserDetailsBody, params: RequestParams = {}) =>
-      this.request<UpsertUserDetailsResponse, any>({
-        path: `/api/user/details`,
-        method: "PATCH",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerUpdateUserProfile
-     * @request PATCH:/api/user/profile
-     */
-    userControllerUpdateUserProfile: (
-      data: {
-        /** @format binary */
-        userAvatar?: File;
-        /** @format string */
-        data?: string;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/api/user/profile`,
-        method: "PATCH",
-        body: data,
-        type: ContentType.FormData,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerAdminUpdateUser
-     * @request PATCH:/api/user/admin
-     */
-    userControllerAdminUpdateUser: (
-      query: {
-        /** @format uuid */
-        id: string;
-      },
-      data: AdminUpdateUserBody,
-      params: RequestParams = {},
-    ) =>
-      this.request<AdminUpdateUserResponse, any>({
-        path: `/api/user/admin`,
-        method: "PATCH",
-        query: query,
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerChangePassword
-     * @request PATCH:/api/user/change-password
-     */
-    userControllerChangePassword: (
-      query: {
-        /** @format uuid */
-        id: string;
-      },
-      data: ChangePasswordBody,
-      params: RequestParams = {},
-    ) =>
-      this.request<ChangePasswordResponse, any>({
-        path: `/api/user/change-password`,
-        method: "PATCH",
-        query: query,
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerBulkAssignUsersToGroup
-     * @request PATCH:/api/user/bulk/groups
-     */
-    userControllerBulkAssignUsersToGroup: (
-      data: BulkAssignUsersToGroupBody,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/api/user/bulk/groups`,
-        method: "PATCH",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerArchiveBulkUsers
-     * @request PATCH:/api/user/bulk/archive
-     */
-    userControllerArchiveBulkUsers: (data: ArchiveBulkUsersBody, params: RequestParams = {}) =>
-      this.request<ArchiveBulkUsersResponse, any>({
-        path: `/api/user/bulk/archive`,
-        method: "PATCH",
-        body: data,
-        type: ContentType.Json,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerBulkUpdateUsersRoles
-     * @request PATCH:/api/user/bulk/roles
-     */
-    userControllerBulkUpdateUsersRoles: (
-      data: BulkUpdateUsersRolesBody,
-      params: RequestParams = {},
-    ) =>
-      this.request<void, any>({
-        path: `/api/user/bulk/roles`,
-        method: "PATCH",
-        body: data,
-        type: ContentType.Json,
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerImportUsers
-     * @request POST:/api/user/import
-     */
-    userControllerImportUsers: (
-      data: {
-        /** @format binary */
-        usersFile?: File;
-      },
-      params: RequestParams = {},
-    ) =>
-      this.request<ImportUsersResponse, any>({
-        path: `/api/user/import`,
-        method: "POST",
-        body: data,
-        type: ContentType.FormData,
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerResetOnboardingStatus
-     * @request PATCH:/api/user/onboarding-status/reset
-     */
-    userControllerResetOnboardingStatus: (params: RequestParams = {}) =>
-      this.request<ResetOnboardingStatusResponse, any>({
-        path: `/api/user/onboarding-status/reset`,
-        method: "PATCH",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
-     * @name UserControllerMarkOnboardingComplete
-     * @request PATCH:/api/user/onboarding-status/{page}
-     */
-    userControllerMarkOnboardingComplete: (page: string, params: RequestParams = {}) =>
-      this.request<MarkOnboardingCompleteResponse, any>({
-        path: `/api/user/onboarding-status/${page}`,
-        method: "PATCH",
-        format: "json",
-        ...params,
-      }),
-
-    /**
-     * No description
-     *
      * @name GroupControllerGetAllGroups
      * @request GET:/api/group/all
      */
@@ -5624,6 +5665,8 @@ export class API<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         excludeCourseId?: string;
         /** @default "en" */
         language?: "en" | "es";
+        /** @default "en" */
+        filterLanguage?: "en" | "es";
       },
       params: RequestParams = {},
     ) =>
@@ -7300,6 +7343,34 @@ export class API<SecurityDataType extends unknown> extends HttpClient<SecurityDa
     /**
      * No description
      *
+     * @name CategoryControllerGetMenuCategories
+     * @request GET:/api/category/menu
+     */
+    categoryControllerGetMenuCategories: (params: RequestParams = {}) =>
+      this.request<GetMenuCategoriesResponse, any>({
+        path: `/api/category/menu`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name CategoryControllerGetCategoryPage
+     * @request GET:/api/category/page/{slug}
+     */
+    categoryControllerGetCategoryPage: (slug: string, params: RequestParams = {}) =>
+      this.request<GetCategoryPageResponse, any>({
+        path: `/api/category/page/${slug}`,
+        method: "GET",
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
      * @name CategoryControllerGetCategoryById
      * @request GET:/api/category/{id}
      */
@@ -7649,6 +7720,39 @@ export class API<SecurityDataType extends unknown> extends HttpClient<SecurityDa
         method: "POST",
         body: data,
         type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name CheckoutControllerRequestPaymentLink
+     * @request POST:/api/checkout/request-payment-link
+     */
+    checkoutControllerRequestPaymentLink: (
+      data: RequestPaymentLinkBody,
+      params: RequestParams = {},
+    ) =>
+      this.request<RequestPaymentLinkResponse, any>({
+        path: `/api/checkout/request-payment-link`,
+        method: "POST",
+        body: data,
+        type: ContentType.Json,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name CheckoutControllerGetOrderStatus
+     * @request GET:/api/checkout/orders/{id}/status
+     */
+    checkoutControllerGetOrderStatus: (id: string, params: RequestParams = {}) =>
+      this.request<GetOrderStatusResponse, any>({
+        path: `/api/checkout/orders/${id}/status`,
+        method: "GET",
         format: "json",
         ...params,
       }),
@@ -8624,6 +8728,63 @@ export class API<SecurityDataType extends unknown> extends HttpClient<SecurityDa
       this.request<void, any>({
         path: `/api/analytics/active-users`,
         method: "GET",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name RegistrationAttemptsControllerGetAll
+     * @request GET:/api/registration-attempts
+     */
+    registrationAttemptsControllerGetAll: (
+      query?: {
+        keyword?: string;
+        source?: string;
+        registered?: string;
+        dateFrom?: string;
+        dateTo?: string;
+        /** @min 1 */
+        page?: number;
+        perPage?: number;
+        sort?:
+          | "createdAt"
+          | "phone"
+          | "source"
+          | "registered"
+          | "-createdAt"
+          | "-phone"
+          | "-source"
+          | "-registered";
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GetAllResponse, any>({
+        path: `/api/registration-attempts`,
+        method: "GET",
+        query: query,
+        format: "json",
+        ...params,
+      }),
+
+    /**
+     * No description
+     *
+     * @name RegistrationAttemptsControllerGetStats
+     * @request GET:/api/registration-attempts/stats
+     */
+    registrationAttemptsControllerGetStats: (
+      query?: {
+        dateFrom?: string;
+        dateTo?: string;
+      },
+      params: RequestParams = {},
+    ) =>
+      this.request<GetStatsResponse, any>({
+        path: `/api/registration-attempts/stats`,
+        method: "GET",
+        query: query,
+        format: "json",
         ...params,
       }),
   };

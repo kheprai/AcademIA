@@ -1,4 +1,4 @@
-import { ConflictException, Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { and, eq, isNull } from "drizzle-orm";
 
 import { DatabasePg } from "src/common";
@@ -46,23 +46,40 @@ export class MercadoPagoWebhookHandler {
 
       const paymentRecord = await this.mercadopagoService.getPaymentByProviderId(paymentId);
 
-      if (!paymentRecord) {
-        this.logger.warn(`Payment record not found for provider ID: ${paymentId}`);
-        return false;
-      }
-
       if (paymentInfo.status === "approved") {
-        if (paymentRecord.orderId) {
-          return this.handleCartCheckoutApproval(paymentRecord.orderId, paymentRecord.userId);
+        if (paymentRecord) {
+          if (paymentRecord.orderId) {
+            return this.handleCartCheckoutApproval(paymentRecord.orderId, paymentRecord.userId);
+          }
+
+          if (paymentRecord.courseId) {
+            return this.enrollUserInCourse(paymentRecord.userId, paymentRecord.courseId, paymentId);
+          }
         }
 
-        if (paymentRecord.courseId) {
-          return this.enrollUserInCourse(
-            paymentRecord.userId,
-            paymentRecord.courseId,
-            paymentId,
+        // Fallback: use external_reference (orderId) from MercadoPago payment data
+        // This handles the preference flow where no payment record is created upfront
+        if (paymentInfo.externalReference) {
+          this.logger.log(
+            `No payment record found, using external_reference: ${paymentInfo.externalReference}`,
+          );
+
+          const [order] = await this.db
+            .select()
+            .from(orders)
+            .where(eq(orders.id, paymentInfo.externalReference));
+
+          if (order) {
+            return this.handleCartCheckoutApproval(order.id, order.userId);
+          }
+
+          this.logger.warn(
+            `Order not found for external_reference: ${paymentInfo.externalReference}`,
           );
         }
+
+        this.logger.warn(`Payment ${paymentId}: no payment record or external_reference found`);
+        return false;
       }
 
       return true;
@@ -72,15 +89,9 @@ export class MercadoPagoWebhookHandler {
     }
   }
 
-  private async handleCartCheckoutApproval(
-    orderId: string,
-    userId: string,
-  ): Promise<boolean> {
+  private async handleCartCheckoutApproval(orderId: string, userId: string): Promise<boolean> {
     try {
-      await this.db
-        .update(orders)
-        .set({ status: "completed" })
-        .where(eq(orders.id, orderId));
+      await this.db.update(orders).set({ status: "completed" }).where(eq(orders.id, orderId));
 
       await this.enrollOrderCourses(orderId, userId);
 
@@ -115,7 +126,9 @@ export class MercadoPagoWebhookHandler {
         return false;
       }
 
-      await this.courseService.enrollCourse(courseId, userId, undefined, paymentId);
+      await this.courseService.enrollCourse(courseId, userId, undefined, paymentId, undefined, {
+        purchased: true,
+      });
 
       this.logger.log(
         `User ${userId} enrolled in course ${courseId} via MercadoPago payment ${paymentId}`,
@@ -136,15 +149,16 @@ export class MercadoPagoWebhookHandler {
 
     for (const item of items) {
       try {
-        await this.courseService.enrollCourse(item.courseId, userId);
-      } catch (error) {
-        if (error instanceof ConflictException) {
-          this.logger.log(`User ${userId} already enrolled in course ${item.courseId}, skipping`);
-          continue;
-        }
-        this.logger.error(
-          `Failed to enroll user ${userId} in course ${item.courseId}: ${error}`,
+        await this.courseService.enrollCourse(
+          item.courseId,
+          userId,
+          undefined,
+          undefined,
+          undefined,
+          { purchased: true },
         );
+      } catch (error) {
+        this.logger.error(`Failed to enroll user ${userId} in course ${item.courseId}: ${error}`);
       }
     }
 

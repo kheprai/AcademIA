@@ -1,6 +1,16 @@
 app.lms.localhost {
-    reverse_proxy /api/* {
-        to http://localhost:3000
+    handle /api/* {
+        reverse_proxy localhost:3000
+    }
+
+    handle {
+        reverse_proxy localhost:5173
+    }
+}
+
+:8888 {
+    handle /api/* {
+        reverse_proxy localhost:3000
     }
 
     handle {

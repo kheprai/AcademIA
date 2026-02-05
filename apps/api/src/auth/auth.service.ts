@@ -20,14 +20,13 @@ import { SettingsService } from "src/settings/settings.service";
 import { USER_ROLES, type UserRole } from "src/user/schemas/userRoles";
 import { WhatsAppService } from "src/whatsapp/whatsapp.service";
 
-import { userOnboarding, users } from "../storage/schema";
+import { registrationAttempts, userOnboarding, users } from "../storage/schema";
 import { UserService } from "../user/user.service";
 
 import { OTPService } from "./otp.service";
 import { TokenService } from "./token.service";
 
 import type { CreateAccountBody } from "./schemas/create-account.schema";
-import type { Response } from "express";
 import type { CommonUser } from "src/common/schemas/common-user.schema";
 import type { CurrentUser } from "src/common/types/current-user.type";
 import type { UserResponse } from "src/user/schemas/user.schema";
@@ -49,7 +48,56 @@ export class AuthService {
     private whatsAppService: WhatsAppService,
   ) {}
 
-  public async sendOTP(phone: string) {
+  public async sendOTP(
+    phone: string,
+    context?: "login" | "register",
+    registrationData?: {
+      source?: "register" | "checkout";
+      cartSnapshot?: Array<{
+        courseId: string;
+        title: string;
+        priceInCents: number;
+        mercadopagoPriceInCents?: number;
+        currency: string;
+      }>;
+      termsAccepted?: boolean;
+    },
+  ) {
+    // In login context, check if user exists before generating OTP
+    if (context === "login") {
+      const [existingUser] = await this.db
+        .select({ id: users.id })
+        .from(users)
+        .where(and(eq(users.phone, phone), isNull(users.deletedAt)));
+
+      if (!existingUser) {
+        if (process.env.PHONE_DEBUG === "true") {
+          return { message: "OTP sent (debug)", debugUserNotFound: phone };
+        }
+        return { message: "OTP sent" };
+      }
+    }
+
+    // Track registration attempt
+    if (context === "register" && registrationData?.source) {
+      const totalPriceUsdCents =
+        registrationData.cartSnapshot?.reduce((sum, item) => sum + item.priceInCents, 0) ?? null;
+      const totalPriceArsCents =
+        registrationData.cartSnapshot?.reduce(
+          (sum, item) => sum + (item.mercadopagoPriceInCents ?? 0),
+          0,
+        ) ?? null;
+
+      await this.db.insert(registrationAttempts).values({
+        phone,
+        source: registrationData.source,
+        cartSnapshot: registrationData.cartSnapshot ?? null,
+        termsAccepted: registrationData.termsAccepted ?? false,
+        totalPriceUsdCents,
+        totalPriceArsCents,
+      });
+    }
+
     const code = await this.otpService.generateAndStore(phone);
 
     if (process.env.PHONE_DEBUG === "true") {
@@ -151,6 +199,18 @@ export class AuthService {
         .returning();
 
       await trx.insert(userOnboarding).values({ userId: newUser.id });
+
+      // Mark all registration attempts for this phone as registered
+      await trx
+        .update(registrationAttempts)
+        .set({
+          registered: true,
+          registeredAt: new Date(),
+          userId: newUser.id,
+          firstName: data.firstName,
+          lastName: data.lastName,
+        })
+        .where(eq(registrationAttempts.phone, data.phone));
 
       await this.settingsService.createSettingsIfNotExists(
         newUser.id,

@@ -48,6 +48,7 @@ const ensureCategory = async (db: DatabasePg): Promise<UUIDType> => {
     .values({
       id: faker.string.uuid(),
       title: { en: categoryName, es: categoryName + " (ES)" },
+      slug: categoryName.toLowerCase().replace(/\s+/g, "-"),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     })

@@ -35,11 +35,12 @@ import { useCourseSettingsForm } from "./hooks/useCourseSettingsForm";
 import type { SupportedLanguages } from "@repo/shared";
 
 const getCategoryTitle = (
-  title: string | Record<string, string>,
+  title: string | Record<string, string> | object,
   language: SupportedLanguages,
 ): string => {
   if (typeof title === "string") return title;
-  return title?.[language] || title?.en || Object.values(title || {})[0] || "";
+  const record = title as Record<string, string>;
+  return record?.[language] || record?.en || Object.values(record || {})[0] || "";
 };
 
 type CourseSettingsProps = {
@@ -51,6 +52,7 @@ type CourseSettingsProps = {
   thumbnailS3SingedUrl?: string | null;
   thumbnailS3Key?: string;
   hasCertificate?: boolean;
+  isFeatured?: boolean;
   courseLanguage: SupportedLanguages;
 };
 
@@ -63,6 +65,7 @@ const CourseSettings = ({
   thumbnailS3SingedUrl,
   thumbnailS3Key,
   hasCertificate = false,
+  isFeatured = false,
   courseLanguage,
 }: CourseSettingsProps) => {
   const { t } = useTranslation();
@@ -72,6 +75,7 @@ const CourseSettings = ({
     description,
     categoryId,
     thumbnailS3Key,
+    isFeatured,
     courseLanguage,
     courseId: courseId || "",
   });
@@ -190,6 +194,25 @@ const CourseSettings = ({
                     )}
                   />
                 </div>
+                <FormField
+                  control={form.control}
+                  name="isFeatured"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <input
+                          type="checkbox"
+                          checked={field.value || false}
+                          onChange={(e) => field.onChange(e.target.checked)}
+                          className="h-4 w-4 rounded border-neutral-300"
+                        />
+                      </FormControl>
+                      <Label className="font-normal text-neutral-600">
+                        {t("adminCourseView.settings.field.featured", "Featured Course")}
+                      </Label>
+                    </FormItem>
+                  )}
+                />
                 <BaseEditor
                   id="description"
                   content={description}

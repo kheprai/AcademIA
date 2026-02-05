@@ -2,7 +2,7 @@ import { Body, Controller, Get, Param, Post, Req } from "@nestjs/common";
 import { Type } from "@sinclair/typebox";
 import { Validate } from "nestjs-typebox";
 
-import { BaseResponse, baseResponse, UUIDSchema } from "src/common";
+import { BaseResponse, baseResponse } from "src/common";
 import { Roles } from "src/common/decorators/roles.decorator";
 import { USER_ROLES } from "src/user/schemas/userRoles";
 
@@ -14,14 +14,12 @@ import {
   mercadopagoCheckoutSchema,
   stripeCheckoutResponseSchema,
   stripeCheckoutSchema,
-} from "./schemas/checkout.schema";
-
-import type { CurrentUser } from "src/common/types/current-user.type";
-import type {
   FreeCheckoutBody,
   MercadopagoCheckoutBody,
   StripeCheckoutBody,
 } from "./schemas/checkout.schema";
+
+import type { CurrentUser } from "src/common/types/current-user.type";
 
 const requestPaymentLinkSchema = Type.Object({
   method: Type.Union([Type.Literal("stripe"), Type.Literal("mercadopago")]),
@@ -30,6 +28,7 @@ const requestPaymentLinkSchema = Type.Object({
 const requestPaymentLinkResponseSchema = Type.Object({
   orderId: Type.String(),
   status: Type.String(),
+  debugPaymentUrl: Type.Optional(Type.String()),
 });
 
 const orderStatusResponseSchema = Type.Object({

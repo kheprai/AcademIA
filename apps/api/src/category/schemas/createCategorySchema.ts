@@ -5,5 +5,6 @@ import type { categories } from "src/storage/schema";
 
 export const categoryCreateSchema = Type.Object({
   title: Type.Record(Type.String(), Type.String()), // { en: "...", es: "..." }
+  slug: Type.Optional(Type.String()),
 });
-export type CategoryInsert = InferInsertModel<typeof categories>;
+export type CategoryInsert = Omit<InferInsertModel<typeof categories>, "slug"> & { slug?: string };

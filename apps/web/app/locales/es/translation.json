@@ -142,10 +142,31 @@
     "header": "Crear nueva categoría",
     "subHeader": "Ingresa un título para tu nueva categoría. Haz clic en guardar cuando termines.",
     "editCategoryHeader": "Información de la categoría",
+    "section": {
+      "basicInfo": "Información básica",
+      "menuConfig": "Configuración del menú",
+      "heroConfig": "Sección Hero"
+    },
     "field": {
       "title": "Título",
+      "titleEn": "Título (Inglés)",
+      "titleEs": "Título (Español)",
       "status": "Estado",
-      "newCategoryName": "Nombre de la nueva categoría"
+      "newCategoryName": "Nombre de la nueva categoría",
+      "slug": "Slug",
+      "showInMenu": "Mostrar en menú de navegación",
+      "showInMenuDisabledHint": "Configura la imagen hero y el título primero",
+      "displayOrder": "Orden de visualización",
+      "heroImage": "Imagen Hero",
+      "removeHeroImage": "Eliminar imagen",
+      "heroTitleEn": "Título Hero (Inglés)",
+      "heroTitleEs": "Título Hero (Español)",
+      "heroSubtitleEn": "Subtítulo Hero (Inglés)",
+      "heroSubtitleEs": "Subtítulo Hero (Español)",
+      "heroCtaTextEn": "Texto del botón CTA (Inglés)",
+      "heroCtaTextEs": "Texto del botón CTA (Español)",
+      "heroCtaUrl": "URL del CTA",
+      "heroOverlayColor": "Color de superposición"
     },
     "placeholder": {
       "categoryName": "Ingresa el nombre de la categoría..."
@@ -238,7 +259,8 @@
         "category": "Categoría",
         "description": "Descripción",
         "thumbnail": "Miniatura",
-        "baseLanguage": "Idioma base"
+        "baseLanguage": "Idioma base",
+        "featured": "Curso destacado"
       },
       "placeholder": {
         "title": "Ingresa el título",
@@ -1014,6 +1036,7 @@
       "firstName": "Nombre",
       "lastName": "Apellido",
       "email": "Email",
+      "phone": "Teléfono",
       "role": "Rol",
       "language": "Idioma",
       "status": "Estado",
@@ -1036,6 +1059,53 @@
       "back": "Volver"
     }
   },
+  "registrationAttemptsView": {
+    "header": "Intentos de Registro",
+    "loading": "Cargando...",
+    "noData": "No se encontraron intentos de registro.",
+    "stats": {
+      "totalAttempts": "Intentos Totales",
+      "totalRegistered": "Registrados",
+      "conversionRate": "Tasa de Conversión",
+      "bySource": "Por Origen"
+    },
+    "chart": {
+      "title": "Intentos Diarios",
+      "noData": "Sin datos para el período seleccionado.",
+      "registered": "Registrados",
+      "notRegistered": "No Registrados"
+    },
+    "filters": {
+      "searchByPhone": "Buscar por teléfono...",
+      "source": "Origen",
+      "registered": "Registrado",
+      "clearDates": "Limpiar"
+    },
+    "columns": {
+      "phone": "Teléfono",
+      "source": "Origen",
+      "name": "Nombre",
+      "totalUsd": "Total USD",
+      "totalArs": "Total ARS",
+      "cartTotal": "Items",
+      "cartFree": "Gratis",
+      "cartPaid": "Pagos",
+      "cartItems": "Ítems del Carrito",
+      "terms": "Términos",
+      "registered": "Registrado",
+      "registeredAt": "Fecha de Registro",
+      "createdAt": "Fecha de Creación"
+    },
+    "cart": {
+      "title": "Título",
+      "priceUsd": "Precio USD",
+      "priceArs": "Precio ARS"
+    },
+    "badge": {
+      "yes": "Sí",
+      "no": "No"
+    }
+  },
   "adminUsersView": {
     "filters": {
       "placeholder": {
@@ -1048,6 +1118,7 @@
       "firstName": "Nombre",
       "lastName": "Apellido",
       "email": "Email",
+      "phone": "Teléfono",
       "role": "Rol",
       "status": "Estado",
       "createdAt": "Fecha de creación",
@@ -1742,7 +1813,8 @@
     "ariaLabels": {
       "goToAvailableCourses": "Ir a cursos disponibles"
     },
-    "qa": "Preguntas y respuestas"
+    "qa": "Preguntas y respuestas",
+    "registrationAttempts": "Intentos de Registro"
   },
   "newsPreferences": {
     "subHeader": "Configura los ajustes de noticias",
@@ -1868,7 +1940,8 @@
     "createQA": "Crear nueva pregunta",
     "analytics": "Analytics",
     "progress": "Progreso",
-    "notFound": "Página no encontrada"
+    "notFound": "Página no encontrada",
+    "registrationAttempts": "Intentos de Registro"
   },
   "error": {
     "notFound": {
@@ -2305,7 +2378,7 @@
     "other": {
       "cannotFindCourses": "No pudimos encontrar ningún curso",
       "changeSearchCriteria": "Por favor, cambia los criterios de búsqueda o intenta de nuevo más tarde",
-      "freeLessons": "¡Lecciones gratis!",
+      "freeLessons": "¡Vista previa gratis!",
       "successfullyEnrolledToCourse": "Te has inscrito correctamente en el curso"
     },
     "breadcrumbs": {
@@ -2509,15 +2582,22 @@
   "landing": {
     "nav": {
       "courses": "Cursos",
-      "workshops": "Talleres",
-      "consulting": "Consultoría",
+      "servicios": "Servicios",
+      "serviciosAll": "Ver todo",
+      "capacitaciones": "Capacitaciones",
+      "masterclasses": "Master Classes",
+      "talleres": "Talleres",
+      "charlas": "Charlas",
+      "consultoria": "Consultoría",
+      "implementaciones": "Implementaciones",
       "tools": "Herramientas AI",
       "news": "Noticias",
       "resources": "Recursos",
       "faq": "FAQ",
       "about": "Sobre AcademIA",
       "contact": "Contacto",
-      "language": "Idioma"
+      "language": "Idioma",
+      "viewAllCourses": "Ver todos los cursos"
     },
     "auth": {
       "login": "Accede",
@@ -2552,13 +2632,151 @@
         }
       }
     },
-    "workshops": {
-      "title": "Talleres",
-      "description": "Próximamente encontrarás aquí talleres prácticos y workshops en vivo con expertos de la industria."
+    "servicios": {
+      "title": "Servicios para Instituciones",
+      "description": "Potenciá tu institución con nuestras soluciones de formación en inteligencia artificial y tecnología.",
+      "cta": "Contactanos",
+      "exploreService": "Más información",
+      "services": {
+        "capacitaciones": {
+          "title": "Capacitaciones",
+          "description": "Programas de formación intensivos diseñados para equipos institucionales."
+        },
+        "masterclasses": {
+          "title": "Master Classes",
+          "description": "Sesiones magistrales con expertos líderes en inteligencia artificial."
+        },
+        "talleres": {
+          "title": "Talleres",
+          "description": "Workshops prácticos y hands-on para aprender haciendo."
+        },
+        "charlas": {
+          "title": "Charlas",
+          "description": "Presentaciones y conferencias sobre las últimas tendencias en IA."
+        },
+        "consultoria": {
+          "title": "Consultoría",
+          "description": "Asesoramiento personalizado para la transformación digital de tu institución."
+        },
+        "implementaciones": {
+          "title": "Implementaciones",
+          "description": "Desarrollo e integración de soluciones de IA adaptadas a tu institución."
+        }
+      }
     },
-    "consulting": {
+    "capacitaciones": {
+      "title": "Capacitaciones",
+      "subtitle": "Formación institucional en IA",
+      "description": "Programas de capacitación diseñados para equipos que quieren incorporar inteligencia artificial en sus procesos de trabajo.",
+      "features": {
+        "custom": {
+          "title": "Programas a medida",
+          "description": "Diseñamos el contenido según las necesidades específicas de tu equipo."
+        },
+        "practice": {
+          "title": "Enfoque práctico",
+          "description": "Ejercicios y casos reales de tu industria para aplicar lo aprendido."
+        },
+        "certification": {
+          "title": "Certificación",
+          "description": "Certificados de finalización para todos los participantes."
+        }
+      }
+    },
+    "masterclasses": {
+      "title": "Master Classes",
+      "subtitle": "Aprende de los mejores",
+      "description": "Sesiones magistrales con expertos reconocidos en inteligencia artificial, machine learning y transformación digital.",
+      "features": {
+        "experts": {
+          "title": "Expertos de primer nivel",
+          "description": "Profesionales con experiencia real en proyectos de IA a gran escala."
+        },
+        "interactive": {
+          "title": "Formato interactivo",
+          "description": "Sesiones con espacio para preguntas, debate y networking."
+        },
+        "recording": {
+          "title": "Acceso a grabaciones",
+          "description": "Revisá el contenido en cualquier momento después de la sesión."
+        }
+      }
+    },
+    "talleres": {
+      "title": "Talleres",
+      "subtitle": "Aprender haciendo",
+      "description": "Workshops prácticos donde tu equipo trabaja con herramientas reales de IA en proyectos guiados por expertos.",
+      "features": {
+        "handson": {
+          "title": "100% práctico",
+          "description": "Cada taller incluye ejercicios hands-on con herramientas y datasets reales."
+        },
+        "small": {
+          "title": "Grupos reducidos",
+          "description": "Máximo 20 participantes para garantizar atención personalizada."
+        },
+        "materials": {
+          "title": "Material incluido",
+          "description": "Notebooks, guías y recursos para seguir practicando después del taller."
+        }
+      }
+    },
+    "charlas": {
+      "title": "Charlas",
+      "subtitle": "Inspiración y tendencias",
+      "description": "Conferencias y presentaciones sobre las últimas tendencias en inteligencia artificial y su impacto en los negocios.",
+      "features": {
+        "trends": {
+          "title": "Tendencias actuales",
+          "description": "Análisis de las últimas novedades en IA y su aplicación institucional."
+        },
+        "cases": {
+          "title": "Casos de éxito",
+          "description": "Ejemplos concretos de instituciones que están transformando sus procesos con IA."
+        },
+        "networking": {
+          "title": "Networking",
+          "description": "Conectá con otros profesionales y líderes del sector."
+        }
+      }
+    },
+    "consultoria": {
       "title": "Consultoría",
-      "description": "Próximamente ofreceremos servicios de consultoría personalizada para empresas y profesionales."
+      "subtitle": "Transformación digital con IA",
+      "description": "Asesoramiento personalizado para identificar oportunidades de implementación de inteligencia artificial en tu organización.",
+      "features": {
+        "diagnostic": {
+          "title": "Diagnóstico inicial",
+          "description": "Evaluamos tus procesos actuales e identificamos oportunidades de mejora con IA."
+        },
+        "roadmap": {
+          "title": "Hoja de ruta",
+          "description": "Plan de implementación paso a paso adaptado a tu realidad y presupuesto."
+        },
+        "support": {
+          "title": "Acompañamiento",
+          "description": "Soporte continuo durante la implementación para asegurar resultados."
+        }
+      }
+    },
+    "implementaciones": {
+      "title": "Implementaciones",
+      "subtitle": "Soluciones de IA a medida",
+      "description": "Desarrollo e integración de soluciones de inteligencia artificial adaptadas a las necesidades y procesos de tu institución.",
+      "features": {
+        "integration": {
+          "title": "Integración de sistemas",
+          "description": "Conectamos herramientas de IA con tus plataformas y flujos de trabajo existentes."
+        },
+        "development": {
+          "title": "Desarrollo a medida",
+          "description": "Creamos soluciones personalizadas de IA para resolver desafíos específicos de tu institución."
+        },
+        "maintenance": {
+          "title": "Soporte y mantenimiento",
+          "description": "Monitoreo, actualizaciones y mejora continua de las soluciones implementadas."
+        }
+      }
     },
     "tools": {
       "title": "Herramientas AI",
@@ -2609,7 +2827,7 @@
         "chapters": "{{count}} capítulos",
         "chapter": "1 capítulo",
         "free": "Gratis",
-        "freeLessons": "Lecciones gratuitas",
+        "freeLessons": "Vista previa gratis",
         "enrolled": "Inscrito",
         "viewCourse": "Ver curso",
         "viewDetails": "Ver detalles",
@@ -2648,6 +2866,8 @@
     "courseDetail": {
       "enroll": "Inscribirme",
       "enrollFree": "Inscribirme Gratis",
+      "enrolling": "Inscribiendo...",
+      "enrolledSuccess": "¡Inscripción exitosa!",
       "loginToEnroll": "Inicia sesión para inscribirte",
       "chapters": "Contenido del Curso",
       "chaptersCount": "{{count}} capítulos",
@@ -2655,9 +2875,23 @@
       "instructor": "Instructor",
       "alreadyEnrolled": "Ya estás inscrito",
       "continueLearning": "Continuar aprendiendo",
-      "freeChapters": "Incluye lecciones gratuitas",
+      "freeChapters": "Incluye vista previa gratis",
       "backToCourses": "Volver a cursos",
       "notFound": "Curso no encontrado",
+      "startFreeLessons": "Comenzar Vista Previa Gratis",
+      "enrollToUnlock": "Inscribite para desbloquear",
+      "purchaseToUnlock": "Compralo para desbloquear",
+      "signInToAccess": "Registrate para acceder",
+      "courseContent": "Contenido del Curso",
+      "freeCourse": "Curso Gratis",
+      "enrolled": "Inscripto",
+      "buyCourse": "Comprar Curso",
+      "lessonTypes": {
+        "content": "Lección",
+        "quiz": "Quiz",
+        "ai_mentor": "Mentor IA",
+        "embed": "Externo"
+      },
       "languageNotAvailable": {
         "title": "Idioma no disponible",
         "description": "El curso \"{{course}}\" no está disponible en {{language}}.",
@@ -2698,6 +2932,49 @@
       "noResults": "No se encontraron preguntas",
       "contactSupport": "¿No encuentras lo que buscas?",
       "contactUs": "Contáctanos"
+    },
+    "categoryPage": {
+      "notFound": "Categoria no encontrada",
+      "loading": "Cargando...",
+      "featuredCourses": "Cursos Destacados",
+      "viewCourse": "Ver Curso",
+      "noCoursesAvailable": "Aun no hay cursos disponibles en esta categoria.",
+      "viewAllCourses": "Ver todos los cursos",
+      "viewCategoryCourses": "Ver cursos de {{category}}",
+      "stats": {
+        "title": "Por que elegir nuestros cursos",
+        "students": "Estudiantes",
+        "studentsDesc": "Aprendiendo con nosotros",
+        "courses": "Cursos",
+        "coursesDesc": "Disponibles para ti",
+        "online": "Online",
+        "onlineDesc": "Estudia donde sea, cuando sea",
+        "support": "Soporte",
+        "supportDesc": "Siempre disponible para ti"
+      },
+      "testimonials": {
+        "title": "Que dicen nuestros estudiantes",
+        "student1": {
+          "name": "Maria Garcia",
+          "role": "Profesional",
+          "quote": "Los cursos transformaron completamente mis habilidades profesionales. Muy recomendable!"
+        },
+        "student2": {
+          "name": "Carlos Lopez",
+          "role": "Emprendedor",
+          "quote": "Excelente calidad de contenido y enfoque muy practico. Aplico lo que aprendo cada dia."
+        },
+        "student3": {
+          "name": "Ana Rodriguez",
+          "role": "Estudiante",
+          "quote": "La plataforma es intuitiva y los cursos estan muy bien estructurados. Gran experiencia de aprendizaje!"
+        }
+      },
+      "cta": {
+        "headline": "Listo para empezar a aprender?",
+        "subtitle": "Unite a miles de estudiantes que ya estan mejorando sus habilidades",
+        "button": "Explorar cursos"
+      }
     }
   },
   "cart": {
@@ -2707,7 +2984,8 @@
       "viewCart": "Ver Carrito",
       "checkout": "Ir a Pagar",
       "subtotal": "Subtotal",
-      "itemCount": "{{count}} curso(s)"
+      "itemCount": "{{count}} curso(s)",
+      "enrollOptionsHint": "Algunos cursos permiten inscripción gratuita. Configurá las opciones en el carrito."
     },
     "page": {
       "title": "Carrito de Compras",
@@ -2715,6 +2993,11 @@
       "proceedToCheckout": "Proceder al Pago",
       "removeItem": "Eliminar",
       "clearCart": "Vaciar Carrito"
+    },
+    "removeConfirm": {
+      "message": "¿Eliminar \"{{title}}\"?",
+      "confirm": "Sí",
+      "cancel": "No"
     },
     "checkout": {
       "title": "Pago",
@@ -2728,16 +3011,50 @@
       "freeEnrollment": "Inscripción Gratuita",
       "freeEnrollmentDesc": "Estos cursos son gratuitos. Hacé clic abajo para inscribirte al instante.",
       "freeEnrollmentSuccess": "¡Te inscribiste en los cursos gratuitos!",
-      "mixedCartNote": "Los cursos gratuitos se inscribirán automáticamente al completar el pago."
+      "mixedCartNote": "Los cursos gratuitos se inscribirán automáticamente al completar el pago.",
+      "enrollOnlyDesc": "Te inscribirás en los cursos seleccionados. Podrás acceder al contenido gratuito y comprar el acceso completo más adelante.",
+      "enrollNow": "Inscribirme ahora",
+      "enrollLabel": "Solo inscribirme",
+      "enrollTooltip": "Acceso gratuito al contenido libre del curso.",
+      "enrollAndBuyLabel": "Inscribirme y comprar",
+      "enrollAndBuyTooltip": "Acceso completo a todo el contenido del curso.",
+      "nofreeContent": "Este curso no tiene contenido gratuito.",
+      "enrollOnlyNote": "{{count}} curso(s) solo inscripción (gratis)",
+      "enrollInfo": "Opciones de inscripción"
     },
     "confirmation": {
-      "title": "¡Pedido Confirmado!",
-      "subtitle": "Tu pago fue exitoso y ya estás inscrito en los cursos.",
-      "orderId": "ID de Pedido",
-      "enrolledCourses": "Cursos Inscriptos",
+      "title": "¡Compra exitosa!",
+      "subtitle": "Tu pago fue procesado con éxito. Ya podés acceder a tus cursos.",
+      "subtitleGeneric": "El pago fue procesado con éxito.",
+      "subtitleGuest": "Tu pago fue procesado con éxito.",
+      "orderId": "Pedido",
+      "enrolledCourses": "Cursos",
       "goToCourse": "Ir al Curso",
-      "browseMore": "Ver Más Cursos",
-      "notFound": "Pedido no encontrado"
+      "browseMore": "Explorar cursos",
+      "notFound": "Pedido no encontrado",
+      "goToLibrary": "Ir a mis cursos",
+      "loginToAccess": "Iniciá sesión para acceder a tus cursos.",
+      "login": "Iniciar sesión",
+      "notYourOrder": "Esta compra no pertenece a tu cuenta.",
+      "redirecting": "Redirigiendo a tus cursos en {{seconds}}s...",
+      "awaitingPaymentTitle": "Esperando pago...",
+      "awaitingPaymentDesc": "Usa el link de pago que te enviamos por WhatsApp para completar tu compra.",
+      "pollingStatus": "Actualizando automáticamente...",
+      "statusAwaiting": "Esperando pago",
+      "orderItems": "Cursos en tu pedido"
+    },
+    "success": {
+      "title": "¡Ya estás inscripto!",
+      "subtitle": "Tu inscripción fue exitosa. Ya podés acceder a tus cursos.",
+      "enrolledCourses": "Cursos inscriptos",
+      "goToCourse": "Ir al curso",
+      "startLearning": "Comenzar a aprender",
+      "goToLibrary": "Ir a mis cursos",
+      "browseMore": "Explorar más cursos",
+      "purchased": "Comprado",
+      "enrolled": "Inscripto",
+      "genericTitle": "¡Inscripción exitosa!",
+      "genericSubtitle": "Ya podés acceder a tus cursos desde tu biblioteca."
     },
     "button": {
       "addToCart": "Agregar al Carrito",
@@ -2748,7 +3065,16 @@
       "removeFromCart": "Quitar del Carrito",
       "viewCart": "Ver Carrito",
       "goToCheckout": "Ir al Checkout",
-      "enrollFree": "Inscribirse Gratis"
+      "enrollFree": "Inscribirse Gratis",
+      "addFree": "Agregar (Gratis)",
+      "enrollFreeShort": "Inscribirme Gratis",
+      "enrollPreview": "Inscribirse en Vista Previa",
+      "buy": "Comprar",
+      "buyNow": "Comprar Ahora",
+      "buyCourse": "Comprar Curso",
+      "preview": "Vista Previa",
+      "addToCartFull": "Agregar al Carrito",
+      "free": "Gratis"
     },
     "currency": {
       "toggle": "Moneda"

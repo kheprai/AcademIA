@@ -40,6 +40,7 @@ export const studentCourseSchema = Type.Object({
   slug: Type.String(),
   availableLocales: Type.Array(Type.String()),
   baseLanguage: Type.String(),
+  isFeatured: Type.Optional(Type.Boolean()),
 });
 
 export const coursesForContentCreatorSchema = Type.Object({

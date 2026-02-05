@@ -249,7 +249,7 @@ export class AiService {
   async retakeLesson(lessonId: UUIDType, userId: UUIDType, userRole: UserRole) {
     const [lesson] = await this.aiRepository.checkLessonAssignment(lessonId, userId);
 
-    if (userRole === USER_ROLES.STUDENT && !lesson.isAssigned && !lesson.isFreemium)
+    if (userRole === USER_ROLES.STUDENT && !lesson.isPurchased && !lesson.isFreemium)
       throw new UnauthorizedException("You are not assigned to this lesson");
 
     await this.db.transaction(async (trx) => {

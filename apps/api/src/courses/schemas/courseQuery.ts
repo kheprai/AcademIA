@@ -86,6 +86,7 @@ export type CoursesQuery = {
   currentUserRole?: UserRole;
   excludeCourseId?: UUIDType;
   language: SupportedLanguages;
+  filterLanguage?: SupportedLanguages;
 };
 
 export const COURSE_ENROLLMENT_SCOPES = {

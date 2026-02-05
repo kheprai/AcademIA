@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
           v3_throwAbortReason: true,
           v3_singleFetch: true,
         },
-        ssr: false, // SPA MODE - Might migrate to React Router 7
+        ssr: true,
         routes,
       }),
       viteStaticCopy({
@@ -34,6 +34,11 @@ export default defineConfig(({ mode }) => {
           {
             src: "app/assets/svgs/app-signet.svg",
             dest: "",
+          },
+          {
+            src: "app/assets/menitngo_logo.png",
+            dest: "",
+            rename: "og-image.png",
           },
           {
             src: "app/locales/en/translation.json",

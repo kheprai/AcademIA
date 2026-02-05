@@ -251,6 +251,7 @@ export class CourseController {
     @Query("sort") sort: SortCourseFieldsOptions,
     @Query("excludeCourseId") excludeCourseId: UUIDType,
     @Query("language") language: SupportedLanguages,
+    @Query("filterLanguage") filterLanguage: SupportedLanguages,
     @CurrentUser("userId") currentUserId?: UUIDType,
   ): Promise<PaginatedResponse<AllStudentCoursesResponse>> {
     const filters: CoursesFilterSchema = {
@@ -264,7 +265,7 @@ export class CourseController {
           ? [creationDateRangeStart, creationDateRangeEnd]
           : undefined,
     };
-    const query = { filters, page, perPage, sort, excludeCourseId, language };
+    const query = { filters, page, perPage, sort, excludeCourseId, language, filterLanguage };
 
     const data = await this.courseService.getAvailableCourses(query, currentUserId);
 
@@ -529,6 +530,27 @@ export class CourseController {
     @Headers("x-test-key") testKey: string,
   ): Promise<BaseResponse<{ message: string }>> {
     await this.courseService.enrollCourse(id, currentUser.userId, testKey, undefined, currentUser);
+
+    return new BaseResponse({ message: "Course enrolled successfully" });
+  }
+
+  @Post(":courseId/enroll")
+  @Roles(USER_ROLES.STUDENT)
+  @Validate({
+    request: [{ type: "param", name: "courseId", schema: UUIDSchema }],
+    response: baseResponse(Type.Object({ message: Type.String() })),
+  })
+  async instantEnroll(
+    @Param("courseId") courseId: UUIDType,
+    @CurrentUser() currentUser: CurrentUserType,
+  ): Promise<BaseResponse<{ message: string }>> {
+    await this.courseService.enrollCourse(
+      courseId,
+      currentUser.userId,
+      undefined,
+      undefined,
+      currentUser,
+    );
 
     return new BaseResponse({ message: "Course enrolled successfully" });
   }

@@ -70,13 +70,17 @@ export class FileService {
   ) {}
 
   async getFileUrl(fileKey: string): Promise<string> {
-    if (!fileKey) return "https://app.lms.localhost/app/assets/placeholders/card-placeholder.jpg";
+    if (!fileKey) return "/api/file/proxy/_placeholder";
     // Handle both https:// and http:// URLs (http is used in local dev with MinIO)
     if (fileKey.startsWith("https://") || fileKey.startsWith("http://")) return fileKey;
     if (fileKey.startsWith("bunny-")) {
       const videoId = fileKey.replace("bunny-", "");
 
       return this.bunnyStreamService.getUrl(videoId);
+    }
+    // Use proxy URLs for local S3 so images work through ngrok/external access
+    if (this.s3Service.isLocalEndpoint()) {
+      return `/api/file/proxy/${fileKey}`;
     }
     return await this.s3Service.getSignedUrl(fileKey);
   }

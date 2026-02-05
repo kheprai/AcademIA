@@ -223,6 +223,13 @@ const Users = () => {
       ),
     },
     {
+      accessorKey: "phone",
+      header: ({ column }) => (
+        <SortButton<TUser> column={column}>{t("adminUsersView.field.phone")}</SortButton>
+      ),
+      cell: ({ row }) => row.original.phone || "-",
+    },
+    {
       accessorKey: "role",
       header: t("adminUsersView.field.role"),
       cell: ({ row }) => t(`common.roles.${camelCase(row.original.role)}`),

@@ -58,9 +58,13 @@ import type { GetAllCategoriesResponse } from "~/api/generated-api";
 
 type TCategory = GetAllCategoriesResponse["data"][number];
 
-const getCategoryTitle = (title: string | Record<string, string>, language: string): string => {
+const getCategoryTitle = (
+  title: string | Record<string, string> | object,
+  language: string,
+): string => {
   if (typeof title === "string") return title;
-  return title[language] || title.en || Object.values(title)[0] || "";
+  const record = title as Record<string, string>;
+  return record[language] || record.en || Object.values(record)[0] || "";
 };
 
 export const meta: MetaFunction = ({ matches }) => setPageTitle(matches, "pages.categories");

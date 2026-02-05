@@ -32,7 +32,11 @@ import { CategoryService } from "./category.service";
 import {
   type AllCategoriesResponse,
   type CategorySchema,
+  type MenuCategorySchema,
+  type PublicCategoryPageSchema,
   categorySchema,
+  menuCategorySchema,
+  publicCategoryPageSchema,
 } from "./schemas/category.schema";
 import { type SortCategoryFieldsOptions, sortCategoryFieldsOptions } from "./schemas/categoryQuery";
 import { categoryCreateSchema, type CategoryInsert } from "./schemas/createCategorySchema";
@@ -69,6 +73,31 @@ export class CategoryController {
     const data = await this.categoryService.getCategories(query, currentUserRole);
 
     return new PaginatedResponse(data);
+  }
+
+  @Get("menu")
+  @Public()
+  @Validate({
+    response: baseResponse(Type.Array(menuCategorySchema)),
+  })
+  async getMenuCategories(): Promise<BaseResponse<MenuCategorySchema[]>> {
+    const data = await this.categoryService.getMenuCategories();
+
+    return new BaseResponse(data);
+  }
+
+  @Get("page/:slug")
+  @Public()
+  @Validate({
+    response: baseResponse(publicCategoryPageSchema),
+    request: [{ type: "param", name: "slug", schema: Type.String() }],
+  })
+  async getCategoryPage(
+    @Param("slug") slug: string,
+  ): Promise<BaseResponse<PublicCategoryPageSchema>> {
+    const data = await this.categoryService.getCategoryBySlug(slug);
+
+    return new BaseResponse(data);
   }
 
   @Get(":id")

@@ -8,10 +8,17 @@ import { useNewsList } from "~/api/queries";
 import { Icon } from "~/components/Icon";
 import { Skeleton } from "~/components/ui/skeleton";
 import { useLanguageStore } from "~/modules/Dashboard/Settings/Language/LanguageStore";
+import { buildMeta, getCompanyFromMatches } from "~/utils/meta-helpers";
 
+import type { MetaFunction } from "@remix-run/node";
 import type { GetNewsListResponse } from "~/api/generated-api";
 
 const ITEMS_PER_PAGE = 9;
+
+export const meta: MetaFunction = ({ matches }) => {
+  const company = getCompanyFromMatches(matches);
+  return buildMeta({ title: `Noticias | ${company}` });
+};
 
 export default function LandingNewsPage() {
   const { t } = useTranslation();

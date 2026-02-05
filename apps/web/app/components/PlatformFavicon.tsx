@@ -11,14 +11,13 @@ export function PlatformFavicon() {
 
     const finalUrl = platformSimpleLogoUrl || appSignetSvg;
 
+    // Update existing favicon href instead of removing/re-creating DOM nodes.
+    // Removing React-managed <link> elements corrupts the fiber tree and causes
+    // "Node.insertBefore" crashes when navigating between routes.
     const existingFavicons = document.querySelectorAll('link[rel*="icon"]');
-    existingFavicons.forEach((link) => link.remove());
-
-    const link = document.createElement("link");
-    link.rel = "icon";
-    link.type = "image/svg+xml";
-    link.href = finalUrl;
-    document.head.appendChild(link);
+    existingFavicons.forEach((link) => {
+      (link as HTMLLinkElement).href = finalUrl;
+    });
   }, [platformSimpleLogoUrl, isLoading]);
 
   return null;

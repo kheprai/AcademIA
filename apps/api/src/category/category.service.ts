@@ -6,7 +6,7 @@ import {
   UnprocessableEntityException,
 } from "@nestjs/common";
 import { EventBus } from "@nestjs/cqrs";
-import { and, count, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, count, eq, inArray, sql } from "drizzle-orm";
 import { isEqual } from "lodash";
 
 import { DatabasePg } from "src/common";
@@ -14,6 +14,7 @@ import { getSortOptions } from "src/common/helpers/getSortOptions";
 import { addPagination, DEFAULT_PAGE_SIZE } from "src/common/pagination";
 import { CreateCategoryEvent, DeleteCategoryEvent, UpdateCategoryEvent } from "src/events";
 import { LocalizationService } from "src/localization/localization.service";
+import { S3Service } from "src/s3/s3.service";
 import { categories } from "src/storage/schema";
 import { USER_ROLES, type UserRole } from "src/user/schemas/userRoles";
 
@@ -27,6 +28,7 @@ import type { AllCategoriesResponse } from "./schemas/category.schema";
 import type { CategoryQuery } from "./schemas/category.types";
 import type { CategoryInsert } from "./schemas/createCategorySchema";
 import type { CategoryUpdateBody } from "./schemas/updateCategorySchema";
+import type { InferInsertModel } from "drizzle-orm";
 import type { CategoryActivityLogSnapshot } from "src/activity-logs/types";
 import type { Pagination, UUIDType } from "src/common";
 import type { CurrentUser } from "src/common/types/current-user.type";
@@ -37,6 +39,7 @@ export class CategoryService {
     @Inject("DB") private readonly db: DatabasePg,
     private readonly localizationService: LocalizationService,
     private readonly eventBus: EventBus,
+    private readonly s3Service: S3Service,
   ) {}
 
   public async getCategories(
@@ -62,6 +65,15 @@ export class CategoryService {
       archived: categories.archived,
       createdAt: categories.createdAt,
       title: categories.title,
+      slug: categories.slug,
+      showInMenu: categories.showInMenu,
+      displayOrder: categories.displayOrder,
+      heroImageS3Key: categories.heroImageS3Key,
+      heroTitle: categories.heroTitle,
+      heroSubtitle: categories.heroSubtitle,
+      heroCtaText: categories.heroCtaText,
+      heroCtaUrl: categories.heroCtaUrl,
+      heroOverlayColor: categories.heroOverlayColor,
     };
 
     return this.db.transaction(async (tx) => {
@@ -97,7 +109,13 @@ export class CategoryService {
       .from(categories)
       .where(and(eq(categories.id, id)));
 
-    return category;
+    if (!category) return category;
+
+    const heroImageUrl = category.heroImageS3Key
+      ? await this.s3Service.getSignedUrl(category.heroImageS3Key)
+      : null;
+
+    return { ...category, heroImageUrl };
   }
 
   public async createCategory(createCategoryBody: CategoryInsert, currentUser: CurrentUser) {
@@ -117,7 +135,17 @@ export class CategoryService {
       }
     }
 
-    const [newCategory] = await this.db.insert(categories).values(createCategoryBody).returning();
+    // Auto-generate slug from english title if not provided
+    if (!createCategoryBody.slug) {
+      createCategoryBody.slug = await this.generateUniqueSlug(
+        createCategoryBody.title.en || Object.values(createCategoryBody.title)[0],
+      );
+    }
+
+    const [newCategory] = await this.db
+      .insert(categories)
+      .values(createCategoryBody as InferInsertModel<typeof categories>)
+      .returning();
 
     if (!newCategory) throw new UnprocessableEntityException("Category not created");
 
@@ -141,6 +169,18 @@ export class CategoryService {
 
     if (!existingCategory) {
       throw new NotFoundException("Category not found");
+    }
+
+    // Validate showInMenu requires hero content
+    if (updateCategoryBody.showInMenu === true) {
+      const heroImageS3Key = updateCategoryBody.heroImageS3Key ?? existingCategory.heroImageS3Key;
+      const heroTitle = updateCategoryBody.heroTitle ?? existingCategory.heroTitle;
+
+      if (!heroImageS3Key || !heroTitle) {
+        throw new UnprocessableEntityException(
+          "Cannot enable showInMenu without heroImageS3Key and heroTitle configured",
+        );
+      }
     }
 
     const previousSnapshot = this.buildCategorySnapshot(existingCategory);
@@ -167,6 +207,54 @@ export class CategoryService {
     }
 
     return updatedCategory;
+  }
+
+  public async getMenuCategories() {
+    const menuCategories = await this.db
+      .select({
+        id: categories.id,
+        title: categories.title,
+        slug: categories.slug,
+        displayOrder: categories.displayOrder,
+      })
+      .from(categories)
+      .where(and(eq(categories.showInMenu, true), eq(categories.archived, false)))
+      .orderBy(asc(categories.displayOrder), asc(categories.title));
+
+    return menuCategories;
+  }
+
+  public async getCategoryBySlug(slug: string) {
+    const [category] = await this.db
+      .select()
+      .from(categories)
+      .where(
+        and(
+          eq(categories.slug, slug),
+          eq(categories.showInMenu, true),
+          eq(categories.archived, false),
+        ),
+      );
+
+    if (!category) {
+      throw new NotFoundException("Category not found");
+    }
+
+    const heroImageUrl = category.heroImageS3Key
+      ? await this.s3Service.getSignedUrl(category.heroImageS3Key)
+      : null;
+
+    return {
+      id: category.id,
+      title: category.title,
+      slug: category.slug,
+      heroImageUrl,
+      heroTitle: category.heroTitle,
+      heroSubtitle: category.heroSubtitle,
+      heroCtaText: category.heroCtaText,
+      heroCtaUrl: category.heroCtaUrl,
+      heroOverlayColor: category.heroOverlayColor,
+    };
   }
 
   private getColumnToSortBy(sort: CategorySortField, isAdmin: boolean) {
@@ -274,5 +362,32 @@ export class CategoryService {
     }
 
     return conditions ?? undefined;
+  }
+
+  private async generateUniqueSlug(title: string): Promise<string> {
+    let baseSlug = title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+
+    if (!baseSlug) baseSlug = "category";
+
+    let finalSlug = baseSlug;
+    let counter = 0;
+
+    while (true) {
+      const [existing] = await this.db
+        .select({ id: categories.id })
+        .from(categories)
+        .where(eq(categories.slug, finalSlug))
+        .limit(1);
+
+      if (!existing) break;
+
+      counter++;
+      finalSlug = `${baseSlug}-${counter}`;
+    }
+
+    return finalSlug;
   }
 }

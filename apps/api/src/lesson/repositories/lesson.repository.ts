@@ -169,6 +169,7 @@ export class LessonRepository {
         isExternal: sql<boolean>`${lessons.isExternal}`,
         isFreemium: sql<boolean>`${chapters.isFreemium}`,
         isEnrolled: sql<boolean>`CASE WHEN ${studentCourses.status} = ${COURSE_ENROLLMENT.ENROLLED} THEN TRUE ELSE FALSE END`,
+        isPurchased: sql<boolean>`CASE WHEN ${studentCourses.purchasedAt} IS NOT NULL THEN TRUE ELSE FALSE END`,
         studentCourses: sql<string>`CASE WHEN ${studentCourses.status} = ${COURSE_ENROLLMENT.ENROLLED} THEN ${studentCourses.id} ELSE NULL END`,
         nextLessonId: sql<string | null>`
           COALESCE(
@@ -305,6 +306,7 @@ export class LessonRepository {
     return this.db
       .select({
         isAssigned: sql<boolean>`CASE WHEN ${studentCourses.status} IS NOT NULL THEN TRUE ELSE FALSE END`,
+        isPurchased: sql<boolean>`CASE WHEN ${studentCourses.purchasedAt} IS NOT NULL THEN TRUE ELSE FALSE END`,
         isFreemium: sql<boolean>`CASE WHEN ${chapters.isFreemium} THEN TRUE ELSE FALSE END`,
         updatedAt: studentLessonProgress.updatedAt,
         attempts: sql<number | null>`${studentLessonProgress.attempts}`,

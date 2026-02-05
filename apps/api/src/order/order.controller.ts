@@ -2,11 +2,16 @@ import { Controller, Get, Param, Req } from "@nestjs/common";
 import { Validate } from "nestjs-typebox";
 
 import { BaseResponse, baseResponse, UUIDSchema } from "src/common";
+import { Public } from "src/common/decorators/public.decorator";
 import { Roles } from "src/common/decorators/roles.decorator";
 import { USER_ROLES } from "src/user/schemas/userRoles";
 
 import { OrderService } from "./order.service";
-import { orderDetailSchema, orderListSchema } from "./schemas/order.schema";
+import {
+  orderDetailSchema,
+  orderListSchema,
+  publicOrderDetailSchema,
+} from "./schemas/order.schema";
 
 import type { CurrentUser } from "src/common/types/current-user.type";
 
@@ -22,6 +27,17 @@ export class OrderController {
   async listOrders(@Req() request: { user: CurrentUser }) {
     const result = await this.orderService.listOrders(request.user.userId);
     return new BaseResponse(result);
+  }
+
+  @Get(":id/public")
+  @Public()
+  @Validate({
+    request: [{ type: "param", name: "id", schema: UUIDSchema, required: true }],
+    response: baseResponse(publicOrderDetailSchema),
+  })
+  async getOrderPublic(@Param("id") id: string) {
+    const order = await this.orderService.getOrderPublic(id);
+    return new BaseResponse(order);
   }
 
   @Get(":id")

@@ -1,33 +1,45 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useNavigate } from "@remix-run/react";
-import { ArrowLeft, CheckCircle, CreditCard, MessageCircle, ShieldCheck } from "lucide-react";
+import {
+  ArrowLeft,
+  CheckCircle,
+  CreditCard,
+  Info,
+  MessageCircle,
+  ShieldCheck,
+  Trash2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
 
+import { ApiClient } from "~/api/api-client";
 import { useFreeCartCheckout } from "~/api/mutations/useCartCheckout";
+import { useEnrollCourse } from "~/api/mutations/useEnrollCourse";
+import { useRegisterUser } from "~/api/mutations/useRegisterUser";
 import { useRequestPaymentLink } from "~/api/mutations/useRequestPaymentLink";
 import { useSendOTP } from "~/api/mutations/useSendOTP";
 import { useVerifyOTP } from "~/api/mutations/useVerifyOTP";
-import { useRegisterUser } from "~/api/mutations/useRegisterUser";
 import { useCurrentUser } from "~/api/queries/useCurrentUser";
-import { OTPInput } from "~/components/ui/OTPInput";
+import { TermsCheckbox } from "~/components/TermsCheckbox";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import { FormValidationError } from "~/components/ui/form-validation-error";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { OTPInput } from "~/components/ui/OTPInput";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { FormValidationError } from "~/components/ui/form-validation-error";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip";
 import { formatPrice } from "~/lib/formatters/priceFormatter";
 import { useCartCurrency } from "~/lib/hooks/useCartCurrency";
 import { useCartStore } from "~/lib/stores/cartStore";
-import { getCurrencyLocale } from "~/utils/getCurrencyLocale";
 import { cn } from "~/lib/utils";
+import { getCurrencyLocale } from "~/utils/getCurrencyLocale";
 
-import { CartItemCard } from "./CartItemCard";
 import { CurrencyToggle } from "./CurrencyToggle";
 import { EmptyCartState } from "./EmptyCartState";
+import { RemoveItemConfirm } from "./RemoveItemConfirm";
 
 export default function CheckoutPage() {
   const { t } = useTranslation();
@@ -43,21 +55,42 @@ export default function CheckoutPage() {
 
   const [linkSent, setLinkSent] = useState(false);
   const [sentOrderId, setSentOrderId] = useState<string | null>(null);
+  const { mutateAsync: enrollCourse } = useEnrollCourse();
+  const buyItems = useCartStore((state) => state.buyItems);
+  const setBuyItem = useCartStore((state) => state.setBuyItem);
+  const removeItem = useCartStore((state) => state.removeItem);
+  const setLastCheckout = useCartStore((state) => state.setLastCheckout);
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
 
   const isFreeItem = (item: (typeof items)[number]) =>
     item.priceInCents === 0 && !item.stripePriceId && !item.mercadopagoProductId;
 
+  // A paid item with no free chapters MUST be bought (enroll-only is useless)
+  const isBuyForced = (item: (typeof items)[number]) => !isFreeItem(item) && !item.hasFreeChapters;
+
+  const isItemBuy = (item: (typeof items)[number]) =>
+    isFreeItem(item) || isBuyForced(item) || buyItems[item.courseId] !== false;
+
+  // Items that will go through payment
+  const purchaseItems = items.filter((i) => !isFreeItem(i) && isItemBuy(i));
+  // Items that are enroll-only (paid items user chose not to buy)
+  const enrollOnlyItems = items.filter((i) => !isFreeItem(i) && !isItemBuy(i));
+
   const allFree = items.length > 0 && items.every(isFreeItem);
   const hasFree = items.some(isFreeItem);
-  const hasPaid = items.some((i) => !isFreeItem(i));
+  const hasPaid = purchaseItems.length > 0;
+  const allEnrollOnly = !allFree && purchaseItems.length === 0;
 
   const subtotal =
     defaultMethod === "mercadopago"
-      ? items.reduce((sum, item) => sum + item.mercadopagoPriceInCents, 0)
-      : items.reduce((sum, item) => sum + item.priceInCents, 0);
+      ? purchaseItems.reduce((sum, item) => sum + item.mercadopagoPriceInCents, 0) +
+        items.filter(isFreeItem).reduce((sum, item) => sum + item.mercadopagoPriceInCents, 0)
+      : purchaseItems.reduce((sum, item) => sum + item.priceInCents, 0) +
+        items.filter(isFreeItem).reduce((sum, item) => sum + item.priceInCents, 0);
 
-  const hasStripeItems = items.some((item) => item.stripePriceId);
-  const hasMPItems = items.some(
+  const itemsForPayment = [...purchaseItems, ...items.filter(isFreeItem)];
+  const hasStripeItems = itemsForPayment.some((item) => item.stripePriceId);
+  const hasMPItems = itemsForPayment.some(
     (item) => item.mercadopagoProductId && item.mercadopagoPriceInCents > 0,
   );
 
@@ -68,16 +101,66 @@ export default function CheckoutPage() {
     }
   }, [showToggle, defaultMethod, selectedPaymentMethod, setSelectedPaymentMethod]);
 
+  // Ensure local cart items are synced to the server before any checkout action.
+  // Covers the race condition where login/register merges the cart as fire-and-forget.
+  const syncCartToServer = async () => {
+    const courseIds = items.map((i) => i.courseId);
+    if (courseIds.length > 0 && isLoggedIn) {
+      try {
+        await ApiClient.instance.post("/api/cart/merge", { courseIds });
+      } catch {
+        /* cart might already be synced */
+      }
+    }
+  };
+
+  // Enroll-only items via instant enrollment before checkout
+  const handleEnrollOnlyItems = async () => {
+    for (const item of enrollOnlyItems) {
+      try {
+        await enrollCourse({ id: item.courseId });
+      } catch {
+        // Errors handled by mutation toast
+      }
+    }
+  };
+
   const handleFreeCheckout = async () => {
+    await syncCartToServer();
+    setLastCheckout(items, buyItems);
+    // Also enroll any enroll-only items
+    if (enrollOnlyItems.length > 0) {
+      await handleEnrollOnlyItems();
+    }
     const result = await freeCheckout(undefined);
     if (result) {
       navigate("/checkout/success?free=1");
     }
   };
 
+  // When ALL paid items are set to enroll-only (no payment needed)
+  const handleEnrollOnlyCheckout = async () => {
+    await syncCartToServer();
+    setLastCheckout(items, buyItems);
+    await handleEnrollOnlyItems();
+    // Also free checkout for any free items in the cart
+    const freeIds = items.filter(isFreeItem).map((i) => i.courseId);
+    if (freeIds.length > 0) {
+      await freeCheckout(freeIds);
+    }
+    navigate("/checkout/success?free=1");
+  };
+
   const handleRequestPaymentLink = async () => {
     const method = selectedPaymentMethod || defaultMethod;
     if (!method) return;
+
+    await syncCartToServer();
+
+    // Enroll-only items first
+    if (enrollOnlyItems.length > 0) {
+      await handleEnrollOnlyItems();
+    }
 
     try {
       const result = await requestPaymentLink(method);
@@ -126,9 +209,7 @@ export default function CheckoutPage() {
             </Button>
           )}
           <Button variant="outline" className="w-full" asChild>
-            <Link to="/">
-              {t("cart.confirmation.browseMore", "Seguir explorando")}
-            </Link>
+            <Link to="/">{t("cart.confirmation.browseMore", "Seguir explorando")}</Link>
           </Button>
         </div>
       </div>
@@ -164,7 +245,7 @@ export default function CheckoutPage() {
             </Card>
           )}
 
-          {isLoggedIn && allFree && (
+          {isLoggedIn && (allFree || allEnrollOnly) && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -174,21 +255,28 @@ export default function CheckoutPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-sm text-neutral-600">
-                  {t("cart.checkout.freeEnrollmentDesc")}
+                  {allFree
+                    ? t("cart.checkout.freeEnrollmentDesc")
+                    : t(
+                        "cart.checkout.enrollOnlyDesc",
+                        "Te inscribirás en los cursos seleccionados. Podrás acceder al contenido gratuito y comprar el acceso completo más adelante.",
+                      )}
                 </p>
                 <Button
                   variant="primary"
                   className="w-full"
-                  onClick={handleFreeCheckout}
+                  onClick={allFree ? handleFreeCheckout : handleEnrollOnlyCheckout}
                   disabled={isFreeCheckoutPending}
                 >
-                  {t("cart.button.enrollFree")}
+                  {allFree
+                    ? t("cart.button.enrollFree")
+                    : t("cart.checkout.enrollNow", "Inscribirme ahora")}
                 </Button>
               </CardContent>
             </Card>
           )}
 
-          {isLoggedIn && !allFree && (
+          {isLoggedIn && !allFree && !allEnrollOnly && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -231,10 +319,7 @@ export default function CheckoutPage() {
                     <MessageCircle className="mt-0.5 size-5 shrink-0 text-green-600" />
                     <div>
                       <p className="font-medium text-green-800">
-                        {t(
-                          "cart.checkout.whatsappPayment",
-                          "Paga desde tu WhatsApp",
-                        )}
+                        {t("cart.checkout.whatsappPayment", "Paga desde tu WhatsApp")}
                       </p>
                       <p className="mt-1 text-sm text-green-700">
                         {t(
@@ -261,38 +346,151 @@ export default function CheckoutPage() {
           )}
         </div>
 
-        <div className="lg:w-80">
+        <div className="lg:w-96">
           <div className="sticky top-4 rounded-lg border p-6">
-            <h3 className="mb-4 text-lg font-semibold">
-              {t("cart.checkout.orderSummary")}
-            </h3>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">{t("cart.checkout.orderSummary")}</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-neutral-400 hover:text-neutral-600">
+                      <Info className="size-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left" className="max-w-xs">
+                    <p className="text-xs">
+                      <strong>{t("cart.checkout.enrollLabel", "Inscribirme")}:</strong>{" "}
+                      {t(
+                        "cart.checkout.enrollTooltip",
+                        "Acceso gratuito al contenido libre del curso.",
+                      )}
+                    </p>
+                    <p className="mt-1 text-xs">
+                      <strong>
+                        {t("cart.checkout.enrollAndBuyLabel", "Inscribirme y comprar")}:
+                      </strong>{" "}
+                      {t(
+                        "cart.checkout.enrollAndBuyTooltip",
+                        "Acceso completo a todo el contenido del curso.",
+                      )}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
 
-            {!allFree && <CurrencyToggle className="mb-3 justify-end" />}
+            {!allFree && !allEnrollOnly && <CurrencyToggle className="mb-3 justify-end" />}
 
-            <div className="mb-4 max-h-60 space-y-2 overflow-y-auto">
-              {items.map((item) => (
-                <div key={item.courseId} className="flex items-center gap-2 text-sm">
-                  <span className="flex-1 truncate">{item.title}</span>
-                  <span className="shrink-0 font-medium">
-                    {isFreeItem(item)
-                      ? t("landing.courses.card.free")
-                      : defaultMethod === "mercadopago" && item.mercadopagoPriceInCents > 0
-                        ? formatPrice(item.mercadopagoPriceInCents, "ARS", getCurrencyLocale("ARS"))
-                        : formatPrice(item.priceInCents, "USD", getCurrencyLocale("USD"))}
-                  </span>
-                </div>
-              ))}
+            <div className="mb-4 space-y-3 overflow-y-auto" style={{ maxHeight: "32rem" }}>
+              {items.map((item) => {
+                const free = isFreeItem(item);
+                const forced = isBuyForced(item);
+                const buying = isItemBuy(item);
+                const price =
+                  defaultMethod === "mercadopago" && item.mercadopagoPriceInCents > 0
+                    ? formatPrice(item.mercadopagoPriceInCents, "ARS", getCurrencyLocale("ARS"))
+                    : formatPrice(item.priceInCents, "USD", getCurrencyLocale("USD"));
+
+                if (confirmingDeleteId === item.courseId) {
+                  return (
+                    <div key={item.courseId} className="rounded-md p-3">
+                      <RemoveItemConfirm
+                        title={item.title}
+                        onConfirm={() => {
+                          removeItem(item.courseId);
+                          setConfirmingDeleteId(null);
+                        }}
+                        onCancel={() => setConfirmingDeleteId(null)}
+                        compact
+                      />
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={item.courseId} className="rounded-md border p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="line-clamp-2 text-sm font-medium leading-tight">
+                        {item.title}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmingDeleteId(item.courseId)}
+                        className="mt-0.5 shrink-0 text-neutral-400 hover:text-red-500 transition-colors"
+                        aria-label={t("cart.page.removeItem")}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                    <span className="mt-1 block text-xs font-semibold text-primary-700">
+                      {free
+                        ? t("landing.courses.card.free")
+                        : buying
+                          ? price
+                          : t("landing.courses.card.free")}
+                    </span>
+
+                    {!free && !forced && (
+                      <div className="mt-2 flex flex-col gap-1">
+                        <label
+                          className={cn(
+                            "flex items-center gap-2 rounded px-2 py-1 text-xs cursor-pointer transition-colors",
+                            !buying ? "bg-primary-50 text-primary-700" : "hover:bg-neutral-50",
+                          )}
+                        >
+                          <input
+                            type="radio"
+                            name={`checkout-${item.courseId}`}
+                            checked={!buying}
+                            onChange={() => setBuyItem(item.courseId, false)}
+                            className="accent-primary-600"
+                          />
+                          {t("cart.checkout.enrollLabel", "Inscribirme")}
+                          <span className="ml-auto text-xs text-neutral-400">
+                            {t("landing.courses.card.free")}
+                          </span>
+                        </label>
+                        <label
+                          className={cn(
+                            "flex items-center gap-2 rounded px-2 py-1 text-xs cursor-pointer transition-colors",
+                            buying ? "bg-primary-50 text-primary-700" : "hover:bg-neutral-50",
+                          )}
+                        >
+                          <input
+                            type="radio"
+                            name={`checkout-${item.courseId}`}
+                            checked={buying}
+                            onChange={() => setBuyItem(item.courseId, true)}
+                            className="accent-primary-600"
+                          />
+                          {t("cart.checkout.enrollAndBuyLabel", "Inscribirme y comprar")}
+                          <span className="ml-auto text-xs font-medium">{price}</span>
+                        </label>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
 
             <div className="border-t pt-3">
               <div className="flex justify-between text-lg font-bold">
                 <span>{t("cart.checkout.total")}</span>
                 <span>
-                  {allFree
+                  {allFree || allEnrollOnly
                     ? t("landing.courses.card.free")
                     : formatPrice(subtotal, currency, getCurrencyLocale(currency))}
                 </span>
               </div>
+              {enrollOnlyItems.length > 0 && hasPaid && (
+                <p className="mt-1 text-xs text-neutral-500">
+                  {t(
+                    "cart.checkout.enrollOnlyNote",
+                    "{{count}} curso(s) solo inscripción (gratis)",
+                    { count: enrollOnlyItems.length },
+                  )}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -334,7 +532,7 @@ function InlineAuth() {
       </TabsList>
 
       <TabsContent value="login" className="mt-4">
-        <InlineLogin />
+        <InlineLogin onSwitchToRegister={() => setAuthTab("register")} />
       </TabsContent>
 
       <TabsContent value="register" className="mt-4">
@@ -344,7 +542,7 @@ function InlineAuth() {
   );
 }
 
-function InlineLogin() {
+function InlineLogin({ onSwitchToRegister }: { onSwitchToRegister: () => void }) {
   const { t } = useTranslation();
   const [step, setStep] = useState<InlineStep>("phone");
   const [phone, setPhone] = useState("+54");
@@ -366,7 +564,7 @@ function InlineLogin() {
   const handleSendOTP = useCallback(async () => {
     if (!isValidPhone) return;
     try {
-      await sendOTP(phone);
+      await sendOTP({ phone, context: "login" });
       setStep("otp");
       setResendTimer(60);
     } catch {
@@ -393,7 +591,7 @@ function InlineLogin() {
   const handleResend = useCallback(async () => {
     if (resendTimer > 0) return;
     try {
-      await sendOTP(phone);
+      await sendOTP({ phone, context: "login" });
       setResendTimer(60);
     } catch {
       // Error handled by mutation
@@ -433,6 +631,15 @@ function InlineLogin() {
               : t("loginView.button.resendCode", "Reenviar codigo")}
           </button>
         </div>
+        <p className="text-center text-xs text-neutral-400">
+          {t(
+            "loginView.otpHint",
+            "Si no recibiste el codigo, es posible que no tengas una cuenta con este numero.",
+          )}{" "}
+          <button type="button" onClick={onSwitchToRegister} className="text-primary-600 underline">
+            {t("loginView.otpHintRegister", "Registrate")}
+          </button>
+        </p>
       </div>
     );
   }
@@ -440,9 +647,7 @@ function InlineLogin() {
   return (
     <div className="grid gap-4">
       <div className="grid gap-2">
-        <Label htmlFor="inline-login-phone">
-          {t("loginView.field.phone", "Telefono")}
-        </Label>
+        <Label htmlFor="inline-login-phone">{t("loginView.field.phone", "Telefono")}</Label>
         <Input
           id="inline-login-phone"
           type="tel"
@@ -478,6 +683,8 @@ function InlineRegister() {
   const [step, setStep] = useState<InlineStep>("phone");
   const [otpToken, setOtpToken] = useState("");
   const [resendTimer, setResendTimer] = useState(0);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const cartItems = useCartStore((state) => state.items);
 
   const { mutateAsync: sendOTP, isPending: isSendingOTP } = useSendOTP();
   const { mutateAsync: verifyOTP, isPending: isVerifying } = useVerifyOTP();
@@ -508,17 +715,33 @@ function InlineRegister() {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
+  const buildCartSnapshot = useCallback(() => {
+    return cartItems.map((item) => ({
+      courseId: item.courseId,
+      title: item.title,
+      priceInCents: item.priceInCents,
+      mercadopagoPriceInCents: item.mercadopagoPriceInCents,
+      currency: item.currency,
+    }));
+  }, [cartItems]);
+
   const handleSendOTP = useCallback(async () => {
     const phone = getValues("phone");
     if (!phone) return;
     try {
-      await sendOTP(phone);
+      await sendOTP({
+        phone,
+        context: "register",
+        source: "checkout",
+        termsAccepted,
+        cartSnapshot: buildCartSnapshot(),
+      });
       setStep("otp");
       setResendTimer(60);
     } catch {
       // Error handled by mutation
     }
-  }, [getValues, sendOTP]);
+  }, [getValues, sendOTP, termsAccepted, buildCartSnapshot]);
 
   const handleVerifyOTP = useCallback(
     async (code: string) => {
@@ -545,12 +768,18 @@ function InlineRegister() {
     if (resendTimer > 0) return;
     const phone = getValues("phone");
     try {
-      await sendOTP(phone);
+      await sendOTP({
+        phone,
+        context: "register",
+        source: "checkout",
+        termsAccepted,
+        cartSnapshot: buildCartSnapshot(),
+      });
       setResendTimer(60);
     } catch {
       // Error handled by mutation
     }
-  }, [getValues, sendOTP, resendTimer]);
+  }, [getValues, sendOTP, resendTimer, termsAccepted, buildCartSnapshot]);
 
   const onSubmit = async (_data: RegisterFormData) => {
     if (otpToken) {
@@ -604,28 +833,40 @@ function InlineRegister() {
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-2">
           <Label htmlFor="inline-reg-firstName">{t("registerView.field.firstName")}</Label>
-          <Input id="inline-reg-firstName" type="text" placeholder="Juan" {...register("firstName")} />
-          {errors.firstName?.message && (
-            <FormValidationError message={errors.firstName.message} />
-          )}
+          <Input
+            id="inline-reg-firstName"
+            type="text"
+            placeholder="Juan"
+            {...register("firstName")}
+          />
+          {errors.firstName?.message && <FormValidationError message={errors.firstName.message} />}
         </div>
         <div className="grid gap-2">
           <Label htmlFor="inline-reg-lastName">{t("registerView.field.lastName")}</Label>
-          <Input id="inline-reg-lastName" type="text" placeholder="Perez" {...register("lastName")} />
-          {errors.lastName?.message && (
-            <FormValidationError message={errors.lastName.message} />
-          )}
+          <Input
+            id="inline-reg-lastName"
+            type="text"
+            placeholder="Perez"
+            {...register("lastName")}
+          />
+          {errors.lastName?.message && <FormValidationError message={errors.lastName.message} />}
         </div>
       </div>
       <div className="grid gap-2">
         <Label htmlFor="inline-reg-phone">{t("registerView.field.phone", "Telefono")}</Label>
-        <Input id="inline-reg-phone" type="tel" placeholder="+54 11 1234 5678" {...register("phone")} />
+        <Input
+          id="inline-reg-phone"
+          type="tel"
+          placeholder="+54 11 1234 5678"
+          {...register("phone")}
+        />
         {errors.phone?.message && <FormValidationError message={errors.phone.message} />}
       </div>
+      <TermsCheckbox checked={termsAccepted} onCheckedChange={setTermsAccepted} />
       <Button
         type="submit"
         className="w-full"
-        disabled={!isValid || isSendingOTP || isRegistering}
+        disabled={!isValid || !termsAccepted || isSendingOTP || isRegistering}
       >
         {isSendingOTP || isRegistering
           ? t("registerView.button.creating", "Creando cuenta...")

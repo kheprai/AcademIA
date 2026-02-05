@@ -4,16 +4,41 @@ export const routes: (
   defineRoutes: (callback: (defineRoute: DefineRouteFunction) => void) => RouteManifest,
 ) => RouteManifest | Promise<RouteManifest> = (defineRoutes) => {
   return defineRoutes((route) => {
+    // Resource routes (robots.txt, sitemap, llms.txt) — no layout, return raw text/XML
+    route("robots.txt", "routes/robots-txt.ts", { id: "robots-txt" });
+    route("sitemap.xml", "routes/sitemap-xml.ts", { id: "sitemap-xml" });
+    route("llms.txt", "routes/llms-txt.ts", { id: "llms-txt" });
+
     route("", "modules/layout.tsx", () => {
       // Landing pages (public) - with explicit paths
       route("", "modules/Landing/Landing.layout.tsx", { id: "landing-layout" }, () => {
         route("", "modules/Landing/pages/Home.page.tsx", { index: true, id: "landing-home" });
-        route("workshops", "modules/Landing/pages/Workshops.page.tsx", { id: "landing-workshops" });
-        route("consulting", "modules/Landing/pages/Consulting.page.tsx", {
-          id: "landing-consulting",
+        route("servicios", "modules/Landing/pages/ParaEmpresas.page.tsx", {
+          id: "landing-servicios",
+        });
+        route("servicios/capacitaciones", "modules/Landing/pages/Capacitaciones.page.tsx", {
+          id: "landing-capacitaciones",
+        });
+        route("servicios/masterclasses", "modules/Landing/pages/MasterClasses.page.tsx", {
+          id: "landing-masterclasses",
+        });
+        route("servicios/talleres", "modules/Landing/pages/Workshops.page.tsx", {
+          id: "landing-talleres",
+        });
+        route("servicios/charlas", "modules/Landing/pages/Charlas.page.tsx", {
+          id: "landing-charlas",
+        });
+        route("servicios/consultoria", "modules/Landing/pages/Consultoria.page.tsx", {
+          id: "landing-consultoria",
+        });
+        route("servicios/implementaciones", "modules/Landing/pages/Implementaciones.page.tsx", {
+          id: "landing-implementaciones",
         });
         route("tools", "modules/Landing/pages/Tools.page.tsx", { id: "landing-tools" });
         route("courses", "modules/Landing/pages/Courses.page.tsx", { id: "landing-courses" });
+        route("courses/category/:slug", "modules/Landing/pages/CategoryLanding.page.tsx", {
+          id: "landing-category",
+        });
         route("courses/:slug", "modules/Landing/pages/CourseDetail.page.tsx", {
           id: "landing-course-detail",
         });
@@ -30,6 +55,9 @@ export const routes: (
         route("contact", "modules/Landing/pages/Contact.page.tsx", { id: "landing-contact" });
         route("cart", "modules/Cart/Cart.page.tsx", { id: "cart" });
         route("checkout", "modules/Cart/Checkout.page.tsx", { id: "checkout" });
+        route("checkout/success", "modules/Cart/CheckoutSuccess.page.tsx", {
+          id: "checkout-success",
+        });
         route("orders/:orderId", "modules/Cart/OrderConfirmation.page.tsx", {
           id: "order-confirmation",
         });
@@ -134,6 +162,10 @@ export const routes: (
           route("news/add", "modules/News/NewsForm.page.tsx", { id: "admin-add-news" });
           route("news/:newsId", "modules/News/NewsDetails.page.tsx", { id: "admin-news-details" });
           route("news/:newsId/edit", "modules/News/NewsForm.page.tsx", { id: "admin-edit-news" });
+          route(
+            "registration-attempts",
+            "modules/Admin/RegistrationAttempts/RegistrationAttempts.page.tsx",
+          );
         });
       });
 

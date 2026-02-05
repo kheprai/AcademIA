@@ -8,12 +8,12 @@ import { useVerifyOTP } from "~/api/mutations/useVerifyOTP";
 import { useGlobalSettingsSuspense } from "~/api/queries/useGlobalSettings";
 import useLoginPageFiles from "~/api/queries/useLoginPageFiles";
 import { useSSOEnabled } from "~/api/queries/useSSOEnabled";
-import { OTPInput } from "~/components/ui/OTPInput";
 import { PlatformLogo } from "~/components/PlatformLogo";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { OTPInput } from "~/components/ui/OTPInput";
 import { Separator } from "~/components/ui/separator";
 import { toast } from "~/components/ui/use-toast";
 import { cn } from "~/lib/utils";
@@ -79,11 +79,7 @@ export default function LoginPage() {
     (ssoEnabled?.data.slack ?? import.meta.env.VITE_SLACK_OAUTH_ENABLED) === "true";
 
   const {
-    data: {
-      enforceSSO: isSSOEnforced,
-      inviteOnlyRegistration,
-      loginBackgroundImageS3Key,
-    },
+    data: { enforceSSO: isSSOEnforced, inviteOnlyRegistration, loginBackgroundImageS3Key },
   } = useGlobalSettingsSuspense();
 
   const isAnyProviderEnabled = useMemo(
@@ -106,7 +102,7 @@ export default function LoginPage() {
     if (!phone || phone.length < 8) return;
 
     try {
-      await sendOTP(phone);
+      await sendOTP({ phone, context: "login" });
       setStep("otp");
       setResendTimer(60);
     } catch {
@@ -138,7 +134,7 @@ export default function LoginPage() {
   const handleResend = useCallback(async () => {
     if (resendTimer > 0) return;
     try {
-      await sendOTP(phone);
+      await sendOTP({ phone, context: "login" });
       setResendTimer(60);
     } catch {
       // Error handled by mutation
@@ -181,9 +177,7 @@ export default function LoginPage() {
               {step === "phone" && (
                 <div className="grid gap-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="phone">
-                      {t("loginView.field.phone", "Telefono")}
-                    </Label>
+                    <Label htmlFor="phone">{t("loginView.field.phone", "Telefono")}</Label>
                     <Input
                       id="phone"
                       type="tel"
@@ -194,7 +188,10 @@ export default function LoginPage() {
                     />
                     {phone && !isValidPhone && phone.length > 3 && (
                       <div className="text-sm text-red-500">
-                        {t("loginView.validation.phone", "Ingresa un numero valido con codigo de pais (ej: +54...)")}
+                        {t(
+                          "loginView.validation.phone",
+                          "Ingresa un numero valido con codigo de pais (ej: +54...)",
+                        )}
                       </div>
                     )}
                   </div>
@@ -216,10 +213,7 @@ export default function LoginPage() {
                   <p className="text-center text-sm text-neutral-600">
                     {t("loginView.otpSentTo", "Enviamos un codigo a")} <strong>{phone}</strong>
                   </p>
-                  <OTPInput
-                    onComplete={handleVerifyOTP}
-                    disabled={isVerifying}
-                  />
+                  <OTPInput onComplete={handleVerifyOTP} disabled={isVerifying} />
                   {isVerifying && (
                     <p className="text-center text-sm text-neutral-500">
                       {t("loginView.verifying", "Verificando...")}
@@ -243,10 +237,21 @@ export default function LoginPage() {
                       )}
                     >
                       {resendTimer > 0
-                        ? t("loginView.button.resendIn", "Reenviar en {{seconds}}s", { seconds: resendTimer })
+                        ? t("loginView.button.resendIn", "Reenviar en {{seconds}}s", {
+                            seconds: resendTimer,
+                          })
                         : t("loginView.button.resendCode", "Reenviar codigo")}
                     </button>
                   </div>
+                  <p className="text-center text-xs text-neutral-400">
+                    {t(
+                      "loginView.otpHint",
+                      "Si no recibiste el codigo, es posible que no tengas una cuenta con este numero.",
+                    )}{" "}
+                    <Link to="/auth/register" className="text-primary-600 underline">
+                      {t("loginView.otpHintRegister", "Registrate")}
+                    </Link>
+                  </p>
                 </div>
               )}
             </>

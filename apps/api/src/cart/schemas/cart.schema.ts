@@ -1,4 +1,5 @@
 import { Type } from "@sinclair/typebox";
+
 import type { Static } from "@sinclair/typebox";
 
 export const cartItemSchema = Type.Object({
@@ -16,6 +17,7 @@ export const cartItemSchema = Type.Object({
   mercadopagoProductId: Type.Union([Type.String(), Type.Null()]),
   slug: Type.Union([Type.String(), Type.Null()]),
   addedAt: Type.String(),
+  hasFreeChapters: Type.Boolean(),
 });
 
 export type CartItemDto = Static<typeof cartItemSchema>;

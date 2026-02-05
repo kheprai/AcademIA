@@ -23,8 +23,10 @@ import { MicrosoftStrategy } from "./auth/strategy/microsoft.strategy";
 import { SlackStrategy } from "./auth/strategy/slack.strategy";
 import { BunnyStreamModule } from "./bunny/bunnyStream.module";
 import { CacheModule } from "./cache/cache.module";
+import { CartModule } from "./cart/cart.module";
 import { CategoryModule } from "./category/category.module";
 import { CertificatesModule } from "./certificates/certificates.module";
+import { CheckoutModule } from "./checkout/checkout.module";
 import callbackUrlConfig from "./common/configuration/callbackUrl";
 import database from "./common/configuration/database";
 import emailConfig from "./common/configuration/email";
@@ -46,7 +48,9 @@ import { LessonModule } from "./lesson/lesson.module";
 import { LocalizationModule } from "./localization/localization.module";
 import { MercadoPagoModule } from "./mercadopago/mercadopago.module";
 import { NewsModule } from "./news/news.module";
+import { OrderModule } from "./order/order.module";
 import { QuestionsModule } from "./questions/question.module";
+import { RegistrationAttemptsModule } from "./registration-attempts/registration-attempts.module";
 import { ReportModule } from "./report/report.module";
 import { S3Module } from "./s3/s3.module";
 import { ScormModule } from "./scorm/scorm.module";
@@ -61,9 +65,6 @@ import { UserModule } from "./user/user.module";
 import { WhatsAppModule } from "./whatsapp/whatsapp.module";
 
 // Cart/Checkout/Order modules imported AFTER Course/User to avoid circular dependency at file level
-import { CartModule } from "./cart/cart.module";
-import { CheckoutModule } from "./checkout/checkout.module";
-import { OrderModule } from "./order/order.module";
 
 @Module({
   imports: [
@@ -152,6 +153,7 @@ import { OrderModule } from "./order/order.module";
     ArticlesModule,
     AnalyticsModule,
     WhatsAppModule,
+    RegistrationAttemptsModule,
   ],
   controllers: [],
   providers: [

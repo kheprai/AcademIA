@@ -212,6 +212,7 @@ export class MercadoPagoService {
         id: paymentInfo.id!,
         status: paymentInfo.status!,
         statusDetail: paymentInfo.status_detail ?? undefined,
+        externalReference: paymentInfo.external_reference ?? undefined,
         dateApproved: paymentInfo.date_approved ?? undefined,
         dateCreated: paymentInfo.date_created!,
         paymentMethodId: paymentInfo.payment_method_id!,
@@ -275,6 +276,7 @@ export class MercadoPagoService {
             failure: `${appUrl}/orders/${data.orderId}`,
             pending: `${appUrl}/orders/${data.orderId}`,
           },
+          notification_url: `${appUrl}/api/mercadopago/webhook`,
           external_reference: data.orderId,
           metadata: { user_id: data.userId, order_id: data.orderId },
           auto_return: "approved",
@@ -307,9 +309,8 @@ export class MercadoPagoService {
     const client = await this.getClient();
     const paymentClient = new Payment(client);
 
-    let payerCustomerId: string | undefined;
     const [user] = await this.db.select().from(users).where(eq(users.id, data.userId));
-    payerCustomerId = user?.mercadopagoCustomerId ?? undefined;
+    const payerCustomerId: string | undefined = user?.mercadopagoCustomerId ?? undefined;
 
     try {
       const paymentResponse = await paymentClient.create({

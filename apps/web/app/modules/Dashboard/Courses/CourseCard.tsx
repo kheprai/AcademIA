@@ -8,7 +8,6 @@ import { CoursePriceDisplay } from "~/components/CoursePriceDisplay/CoursePriceD
 import CourseProgress from "~/components/CourseProgress";
 import { Icon } from "~/components/Icon";
 import { CategoryChip } from "~/components/ui/CategoryChip";
-import { UserAvatar } from "~/components/UserProfile/UserAvatar";
 import { useUserRole } from "~/hooks/useUserRole";
 import { cn } from "~/lib/utils";
 import CourseCardButton from "~/modules/Dashboard/Courses/CourseCardButton";
@@ -20,9 +19,9 @@ import type { GetAvailableCoursesResponse } from "~/api/generated-api";
 export type CourseCardProps = GetAvailableCoursesResponse["data"][number] & { slug?: string };
 
 const CourseCard = ({
-  author,
-  authorEmail = "",
-  authorAvatarUrl,
+  author: _author,
+  authorEmail: _authorEmail = "",
+  authorAvatarUrl: _authorAvatarUrl,
   category,
   completedChapterCount,
   courseChapterCount,
@@ -104,16 +103,6 @@ const CourseCard = ({
           <div className={cn({ "mt-3": enrolled })}>
             <CourseCardTitle title={title} />
           </div>
-          {authorEmail && (
-            <div className="mb-2 mt-2 flex items-center gap-x-1.5">
-              <UserAvatar
-                className="size-4"
-                userName={author}
-                profilePictureUrl={authorAvatarUrl}
-              />
-              <span className="text-neutral-950">{author}</span>
-            </div>
-          )}
           <div className="flex-grow text-sm text-neutral-500">
             <span className="line-clamp-3">
               <div dangerouslySetInnerHTML={{ __html: description }} />

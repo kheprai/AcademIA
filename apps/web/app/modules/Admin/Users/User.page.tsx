@@ -76,6 +76,10 @@ const User = () => {
               {t("common.button.save")}
             </Button>
           </div>
+          <div className="flex flex-col gap-y-2">
+            <Label className="font-normal text-neutral-600">{t("adminUserView.field.phone")}</Label>
+            <span className="font-semibold">{user.phone || "-"}</span>
+          </div>
           <div className="space-y-4 pt-4">
             {displayedFields.map((field) => (
               <div key={field} className="flex flex-col gap-y-2">
