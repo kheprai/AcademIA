@@ -1,8 +1,14 @@
 import { JsonLd } from "~/components/JsonLd";
 import { buildMeta, getCompanyFromMatches } from "~/utils/meta-helpers";
 
-import { FeaturesSection } from "../components/FeaturesSection";
-import { HeroSection } from "../components/HeroSection";
+import { B2BServices } from "../components/B2BServices";
+import { CTAFinal } from "../components/CTAFinal";
+import { FeaturedCoursesSection } from "../components/FeaturedCourses/FeaturedCoursesSection";
+import { HeroSection } from "../components/Hero/HeroSection";
+import { SectorsGrid } from "../components/SectorsGrid";
+import { StatsBar } from "../components/StatsBar";
+import { TestimonialsSection } from "../components/TestimonialsSection";
+import { ValueProposition } from "../components/ValueProposition";
 
 import type { MetaFunction } from "@remix-run/node";
 
@@ -18,7 +24,13 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <FeaturesSection />
+      <StatsBar />
+      <FeaturedCoursesSection />
+      <ValueProposition />
+      <SectorsGrid />
+      <B2BServices />
+      <TestimonialsSection />
+      <CTAFinal />
       <JsonLd
         data={{
           "@context": "https://schema.org",

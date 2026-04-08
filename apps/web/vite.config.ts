@@ -72,7 +72,15 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     ssr: {
-      noExternal: ["posthog-js", "posthog-js/react", "react-easy-crop", "@mercadopago/sdk-react"],
+      noExternal: [
+        "posthog-js",
+        "posthog-js/react",
+        "react-easy-crop",
+        "@mercadopago/sdk-react",
+        "three",
+        "@react-three/fiber",
+        "@react-three/drei",
+      ],
     },
     // https://github.com/remix-run/remix/issues/10156
     server: {
@@ -99,6 +107,9 @@ export default defineConfig(({ mode }) => {
         external: ["fsevents"],
         output: {
           manualChunks: (id) => {
+            if (id.includes("three") || id.includes("@react-three")) {
+              return "three-vendor";
+            }
             if (id.includes("@remix-run")) {
               return "remix";
             }
@@ -122,6 +133,9 @@ export default defineConfig(({ mode }) => {
         "posthog-js",
         "posthog-js/react",
         "@mercadopago/sdk-react",
+        "three",
+        "@react-three/fiber",
+        "@react-three/drei",
       ],
       exclude: ["fsevents"],
     },

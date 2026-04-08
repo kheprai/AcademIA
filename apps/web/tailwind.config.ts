@@ -214,10 +214,22 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "aurora-drift-1": {
+          "0%, 100%": { transform: "translate3d(0%, 0%, 0)" },
+          "33%": { transform: "translate3d(2%, -3%, 0)" },
+          "66%": { transform: "translate3d(-2%, 2%, 0)" },
+        },
+        "aurora-drift-2": {
+          "0%, 100%": { transform: "translate3d(0%, 0%, 0)" },
+          "33%": { transform: "translate3d(-3%, 2%, 0)" },
+          "66%": { transform: "translate3d(2%, -2%, 0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "aurora-1": "aurora-drift-1 30s ease-in-out infinite",
+        "aurora-2": "aurora-drift-2 40s ease-in-out infinite",
       },
     },
   },

@@ -40,6 +40,14 @@
     "tsc-files": "^1.1.4",
     "turbo": "^2.2.3"
   },
+  "pnpm": {
+    "overrides": {
+      "react": "19.2.4",
+      "react-dom": "19.2.4",
+      "@types/react": "^19",
+      "@types/react-dom": "^19"
+    }
+  },
   "packageManager": "pnpm@10.22.0",
   "engines": {
     "node": ">=20"

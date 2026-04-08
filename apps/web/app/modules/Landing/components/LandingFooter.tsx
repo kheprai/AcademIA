@@ -27,12 +27,12 @@ export function LandingFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-neutral-200 bg-neutral-50">
+    <footer className="relative z-10 border-t border-white/[0.06] bg-[#0C0C14]/80 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div className="md:col-span-1">
             <Link to="/" className="inline-block">
-              <PlatformLogo className="h-8 w-auto" />
+              <PlatformLogo className="h-8 w-auto brightness-0 invert" />
             </Link>
             <p className="mt-4 text-sm text-neutral-600">{t("landing.footer.description")}</p>
           </div>
@@ -83,7 +83,7 @@ export function LandingFooter() {
           </div>
         </div>
 
-        <div className="mt-12 border-t border-neutral-200 pt-8">
+        <div className="mt-12 border-t border-white/[0.06] pt-8">
           <p className="text-center text-sm text-neutral-500">
             &copy; {currentYear} AcademIA. {t("landing.footer.rights")}
           </p>

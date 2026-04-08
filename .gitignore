@@ -47,3 +47,4 @@ yarn-error.log*
 .vscode
 .cursorCLAUDE.md
 **/CLAUDE.md
+.automaker/

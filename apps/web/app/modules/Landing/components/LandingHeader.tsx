@@ -314,11 +314,11 @@ export function LandingHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+    <header className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-[#08080C]/80 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center">
-            <PlatformLogo className="h-8 w-auto" />
+            <PlatformLogo className="h-8 w-auto brightness-0 invert" />
           </Link>
 
           <div className="hidden items-center gap-6 lg:flex">
@@ -488,7 +488,7 @@ export function LandingHeader() {
       </nav>
 
       {mobileMenuOpen && (
-        <div className="border-t border-neutral-200 bg-white lg:hidden">
+        <div className="border-t border-white/[0.06] bg-[#0C0C14] lg:hidden">
           <div className="space-y-1 px-4 py-4">
             {navLinks.map((link) => {
               // Special handling for "courses" in mobile
