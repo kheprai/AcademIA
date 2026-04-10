@@ -1,0 +1,13 @@
+{
+  "name": "AcademIA",
+  "short_name": "AcademIA",
+  "description": "Cursos de IA en español para trabajadores no técnicos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F5F0E4",
+  "theme_color": "#C0392B",
+  "icons": [
+    { "src": "/android-chrome-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/android-chrome-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
